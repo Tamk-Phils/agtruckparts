@@ -1,6 +1,6 @@
 import { supabase } from './supabase';
 
-const VAPID_PUBLIC_KEY = 'BEl62iUYSXUq9p5sk9yR2S2G4d7xS7L-m-Q-8lEj-b9n-m_x-S-m-Q-8lEj-b9n-m_x-S-m-Q-8lEj-b9n-m_x-A'; // Placeholder VAPID key (must be 65 bytes base64 encoded)
+const VAPID_PUBLIC_KEY = 'BE8xQ6jjK-vMNg15K8j0T7GJbaJ22HzeQ3AA7ebtt09Q0zM6MandjuUiLAA8WpOaDx_bThJVZsxqpfgmwl0ueH0';
 
 function urlBase64ToUint8Array(base64String: string) {
     try {
