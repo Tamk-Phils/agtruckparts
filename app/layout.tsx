@@ -5,6 +5,7 @@ import Footer from "@/components/Footer";
 import LiveChat from "@/components/LiveChat";
 import { CartProvider } from "@/components/CartProvider";
 import { AuthProvider } from "@/components/AuthProvider";
+import PushInitializer from "@/components/PushInitializer";
 
 const baseUrl = process.env.NEXT_PUBLIC_SITE_URL || 'https://agtruckparts.com';
 
@@ -116,6 +117,7 @@ export default function RootLayout({
       </head>
       <body>
         <AuthProvider>
+          <PushInitializer />
           <CartProvider>
             <Navbar />
             <main>{children}</main>
