@@ -1,7 +1,7 @@
 'use client'
 import { useState, useEffect } from 'react'
 import Link from 'next/link'
-import { adminSupabase  } from '@/lib/supabase'
+import { adminSupabase } from '@/lib/supabase'
 import { Users as UsersIcon, Mail, Calendar, Search, MessageCircle } from 'lucide-react'
 
 type CustomerProfile = {
@@ -133,8 +133,8 @@ export default function AdminUsersPage() {
                                         </td>
                                         <td className="p-4">
                                             <div className="flex items-center gap-2 text-sm text-gray-600 font-medium">
-                                                <Mail size={14} className="text-gray-400" />
-                                                <a href={`mailto:${user.email}`} className="hover:text-blue-600 hover:underline">{user.email}</a>
+                                                <Mail size={14} className="text-gray-400 shrink-0" />
+                                                <a href={`mailto:${user.email}`} className="hover:text-blue-600 hover:underline truncate max-w-[120px] sm:max-w-[200px] md:max-w-xs">{user.email}</a>
                                             </div>
                                         </td>
                                         <td className="p-4">

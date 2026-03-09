@@ -1,7 +1,7 @@
 'use client'
 import { useState, useEffect } from 'react'
 import { MessageSquare, Phone, Mail, CheckCircle, Clock, AlertCircle, Eye } from 'lucide-react'
-import { adminSupabase  } from '@/lib/supabase'
+import { adminSupabase } from '@/lib/supabase'
 
 type Inquiry = {
     id: string
@@ -91,9 +91,9 @@ export default function AdminInquiriesPage() {
                             </div>
 
                             {/* Contact */}
-                            <div className="grid grid-cols-2 gap-4 mb-6">
-                                <a href={`mailto:${selected.email}`} className="bg-gray-50 border border-gray-200 rounded-xl p-4 flex items-center gap-3 hover:border-blue-300 hover:bg-blue-50 transition-all group">
-                                    <Mail size={16} className="text-gray-400 group-hover:text-blue-600 transition-colors" />
+                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-6">
+                                <a href={`mailto:${selected.email}`} className="bg-gray-50 border border-gray-200 rounded-xl p-4 flex items-center gap-3 hover:border-blue-300 hover:bg-blue-50 transition-all group overflow-hidden">
+                                    <Mail size={16} className="text-gray-400 group-hover:text-blue-600 transition-colors shrink-0" />
                                     <span className="text-sm font-bold text-gray-700 truncate">{selected.email}</span>
                                 </a>
                                 {selected.phone && (

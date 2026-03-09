@@ -140,7 +140,7 @@ export default function UserDashboard() {
                     {/* Main Content */}
                     <main className="flex-1">
                         <div className="mb-8">
-                            <h1 className="text-4xl font-black text-gray-900 tracking-tighter uppercase">
+                            <h1 className="text-3xl md:text-4xl font-black text-gray-900 tracking-tighter uppercase">
                                 {activeTab === 'reservations' ? 'MY RESERVATIONS' : 'MY MESSAGES'}
                             </h1>
                             <p className="text-sm font-medium text-gray-500 mt-1 uppercase tracking-widest">
@@ -167,14 +167,14 @@ export default function UserDashboard() {
                             ) : (
                                 <div className="space-y-4">
                                     {orders.map(order => (
-                                        <div key={order.id} className="bg-white rounded-3xl p-6 border border-gray-100 shadow-sm hover:shadow-md transition-shadow flex items-center justify-between group">
-                                            <div className="flex items-center gap-6">
-                                                <div className="w-12 h-12 bg-gray-50 rounded-2xl flex items-center justify-center text-blue-600 font-black border border-gray-100 group-hover:bg-blue-600 group-hover:text-white transition-colors">
+                                        <div key={order.id} className="bg-white rounded-3xl p-6 border border-gray-100 shadow-sm hover:shadow-md transition-shadow flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 sm:gap-0 group">
+                                            <div className="flex items-center gap-4 sm:gap-6 w-full sm:w-auto">
+                                                <div className="w-12 h-12 bg-gray-50 rounded-2xl flex items-center justify-center text-blue-600 font-black border border-gray-100 group-hover:bg-blue-600 group-hover:text-white transition-colors shrink-0">
                                                     #{order.id.slice(0, 4).toUpperCase()}
                                                 </div>
-                                                <div>
-                                                    <div className="flex items-center gap-3 mb-1">
-                                                        <p className="font-black text-gray-900 tracking-tight">ORDER #{order.id.slice(0, 8).toUpperCase()}</p>
+                                                <div className="min-w-0">
+                                                    <div className="flex flex-wrap items-center gap-2 mb-1">
+                                                        <p className="font-black text-gray-900 tracking-tight truncate">ORDER #{order.id.slice(0, 8).toUpperCase()}</p>
                                                         <StatusBadge status={order.status} />
                                                     </div>
                                                     <p className="text-xs font-bold text-gray-400 uppercase tracking-widest">
@@ -182,8 +182,8 @@ export default function UserDashboard() {
                                                     </p>
                                                 </div>
                                             </div>
-                                            <div className="flex items-center gap-8">
-                                                <div className="text-right">
+                                            <div className="flex items-center justify-between sm:justify-end gap-8 w-full sm:w-auto mt-2 sm:mt-0 pt-4 sm:pt-0 border-t sm:border-0 border-gray-50">
+                                                <div className="text-left sm:text-right">
                                                     <p className="text-xs font-bold text-gray-400 uppercase tracking-widest mb-1">Total Amount</p>
                                                     <p className="text-lg font-black text-gray-900">${order.total_amount.toLocaleString()}</p>
                                                 </div>
