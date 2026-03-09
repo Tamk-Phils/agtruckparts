@@ -1,16 +1,21 @@
 import { supabase } from './supabase';
 
-const VAPID_PUBLIC_KEY = 'BI78K_m-Tj6O7H-bI7-Tj6O7H-bI78K_m-Tj6O7H-bI7-Tj6O7H-bI78K_m-Tj6O7H-bI7-Tj6O7H-bI78K_m'; // Placeholder key
+const VAPID_PUBLIC_KEY = 'BEl62iUYSXUq9p5sk9yR2S2G4d7xS7L-m-Q-8lEj-b9n-m_x-S-m-Q-8lEj-b9n-m_x-S-m-Q-8lEj-b9n-m_x-A'; // Placeholder VAPID key (must be 65 bytes base64 encoded)
 
 function urlBase64ToUint8Array(base64String: string) {
-    const padding = '='.repeat((4 - (base64String.length % 4)) % 4);
-    const base64 = (base64String + padding).replace(/-/g, '+').replace(/_/g, '/');
-    const rawData = window.atob(base64);
-    const outputArray = new Uint8Array(rawData.length);
-    for (let i = 0; i < rawData.length; ++i) {
-        outputArray[i] = rawData.charCodeAt(i);
+    try {
+        const padding = '='.repeat((4 - (base64String.length % 4)) % 4);
+        const base64 = (base64String + padding).replace(/-/g, '+').replace(/_/g, '/');
+        const rawData = window.atob(base64);
+        const outputArray = new Uint8Array(rawData.length);
+        for (let i = 0; i < rawData.length; ++i) {
+            outputArray[i] = rawData.charCodeAt(i);
+        }
+        return outputArray;
+    } catch (e) {
+        console.error('Failed to decode VAPID key. Please ensure VAPID_PUBLIC_KEY in lib/push.ts is a valid base64 encoded VAPID key.', e);
+        return new Uint8Array();
     }
-    return outputArray;
 }
 
 export const subscribeUserToPush = async (userId: string) => {
