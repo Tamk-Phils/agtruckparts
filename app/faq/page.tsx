@@ -4,6 +4,10 @@ import { ChevronDown } from 'lucide-react'
 export const metadata: Metadata = {
     title: 'FAQ | AG Truck Beds and Parts',
     description: 'Frequently asked questions about truck bed and parts purchasing, pickup, pricing, and more at AG Truck Beds and Parts in Buffalo, TX.',
+    keywords: ['truck parts FAQ', 'truck bed pricing', 'AG truck beds questions', 'Hilux parts delivery'],
+    alternates: {
+        canonical: '/faq',
+    },
 }
 
 const FAQS = [

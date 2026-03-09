@@ -6,6 +6,10 @@ import { Shield, Truck, Users, Award, Phone, MapPin } from 'lucide-react'
 export const metadata: Metadata = {
     title: 'About Us | AG Truck Beds and Parts – Buffalo, TX',
     description: 'Learn about AG Truck Beds and Parts, your trusted truck parts yard in Buffalo, TX. Specializing in Toyota Hilux beds, doors, and body panels.',
+    keywords: ['about AG truck beds', 'truck parts yard Buffalo TX', 'Hilux specialists Texas'],
+    alternates: {
+        canonical: '/about',
+    },
 }
 
 export default function AboutPage() {

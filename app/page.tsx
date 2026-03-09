@@ -5,7 +5,16 @@ import { ArrowRight, Phone, MapPin, Star, Shield, Truck, Clock, Zap, ChevronRigh
 import ProductCard from '@/components/ProductCard'
 import ReviewCard from '@/components/ReviewCard'
 import { REVIEWS, STATS } from '@/lib/data'
+import { Metadata } from 'next'
 import { supabase } from '@/lib/supabase'
+
+export const metadata: Metadata = {
+  title: "AG Truck Beds and Parts | Quality Custom Truck Beds & Hilux Parts",
+  description: "Browse our massive inventory of custom flatbed truck beds, Toyota Hilux parts, truck doors, and tailgates. Fast live chat and honest grading in Buffalo, TX.",
+  alternates: {
+    canonical: '/',
+  },
+}
 
 export const revalidate = 60
 
