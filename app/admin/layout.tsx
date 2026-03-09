@@ -1,0 +1,142 @@
+'use client'
+import { useState, useEffect } from 'react'
+import Link from 'next/link'
+import { usePathname } from 'next/navigation'
+import { LayoutDashboard, Package, MessageSquare, Star, LogOut, Menu, X, Settings, Bell, Users } from 'lucide-react'
+import { supabase } from '@/lib/supabase'
+
+const ADMIN_NAV = [
+    { label: 'Dashboard', href: '/admin', Icon: LayoutDashboard },
+    { label: 'Live Chat', href: '/admin/chat', Icon: MessageSquare },
+    { label: 'Orders', href: '/admin/orders', Icon: Package },
+    { label: 'Products', href: '/admin/products', Icon: Package },
+    { label: 'Inquiries', href: '/admin/inquiries', Icon: MessageSquare },
+    { label: 'Reviews', href: '/admin/reviews', Icon: Star },
+    { label: 'Users', href: '/admin/users', Icon: Users },
+    { label: 'Settings', href: '/admin/settings', Icon: Settings },
+]
+
+export default function AdminLayout({ children }: { children: React.ReactNode }) {
+    const [sideOpen, setSideOpen] = useState(true)
+    const [toast, setToast] = useState<{ message: string, href: string, id: number } | null>(null)
+    const pathname = usePathname()
+
+    useEffect(() => {
+        // Orders Channel
+        const ordersChannel = supabase.channel('admin_order_alerts')
+            .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'orders' }, (payload) => {
+                const id = Date.now()
+                setToast({ message: `New Order Received from ${payload.new.customer_name}!`, href: '/admin/orders', id })
+                setTimeout(() => {
+                    setToast(current => current?.id === id ? null : current)
+                }, 8000)
+            })
+            .subscribe()
+
+        // Inquiries Channel
+        const inquiriesChannel = supabase.channel('admin_inquiry_alerts')
+            .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'inquiries' }, (payload) => {
+                const id = Date.now()
+                setToast({ message: `New Request from ${payload.new.name}!`, href: '/admin/inquiries', id })
+                setTimeout(() => {
+                    setToast(current => current?.id === id ? null : current)
+                }, 8000)
+            })
+            .subscribe()
+
+        // Chat Messages Channel (Only alert if the sender is not admin and we aren't already on the chat page)
+        const chatChannel = supabase.channel('admin_chat_alerts')
+            .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'chat_messages' }, (payload) => {
+                if (payload.new.sender !== 'agent' && !window.location.pathname.includes('/admin/chat')) {
+                    const id = Date.now()
+                    setToast({ message: `New Live Chat Message!`, href: '/admin/chat', id })
+                    setTimeout(() => {
+                        setToast(current => current?.id === id ? null : current)
+                    }, 5000)
+                }
+            })
+            .subscribe()
+
+        return () => {
+            supabase.removeChannel(ordersChannel)
+            supabase.removeChannel(inquiriesChannel)
+            supabase.removeChannel(chatChannel)
+        }
+    }, [])
+
+    return (
+        <div className="min-h-screen flex bg-gray-50" style={{ paddingTop: 0 }}>
+            {/* Toast Notification */}
+            {toast && (
+                <div className="fixed top-6 right-6 z-[100] animate-fade-up">
+                    <div className="bg-white border-l-4 border-blue-600 shadow-xl rounded-r-xl p-4 flex items-start gap-4 max-w-sm">
+                        <div className="mt-0.5 rounded-full bg-blue-100 p-2 text-blue-600">
+                            <Bell size={16} className="animate-pulse" />
+                        </div>
+                        <div className="flex-1">
+                            <p className="text-sm font-black text-gray-900 mb-1">New Alert</p>
+                            <p className="text-xs font-medium text-gray-600">{toast.message}</p>
+                            <Link href={toast.href} onClick={() => setToast(null)} className="text-[10px] font-bold text-blue-600 uppercase tracking-widest mt-2 inline-block hover:underline">
+                                View
+                            </Link>
+                        </div>
+                        <button onClick={() => setToast(null)} className="text-gray-400 hover:text-gray-900 p-1">
+                            <X size={14} />
+                        </button>
+                    </div>
+                </div>
+            )}
+
+            {/* Sidebar */}
+            <aside className={`${sideOpen ? 'w-56' : 'w-16'} transition-all duration-300 flex flex-col border-r border-gray-200 bg-white h-screen sticky top-0 shadow-sm z-50`}>
+                <div className="flex items-center justify-between px-4 py-5 border-b border-gray-200">
+                    {sideOpen && (
+                        <div className="flex items-center gap-2">
+                            <div className="w-8 h-8 rounded-lg bg-blue-600 flex items-center justify-center text-xs font-black text-white shadow-sm">AG</div>
+                            <div>
+                                <p className="text-sm font-bold text-gray-900 leading-none">AG ADMIN</p>
+                                <p className="text-[10px] text-gray-500 font-medium">Control Panel</p>
+                            </div>
+                        </div>
+                    )}
+                    <button onClick={() => setSideOpen(!sideOpen)} className="text-gray-400 hover:text-gray-800 transition p-1 rounded-md hover:bg-gray-100">
+                        {sideOpen ? <X size={16} /> : <Menu size={16} />}
+                    </button>
+                </div>
+
+                <nav className="flex flex-col gap-1 p-3 flex-1">
+                    {ADMIN_NAV.map(({ label, href, Icon }) => {
+                        const active = pathname === href
+                        return (
+                            <Link
+                                key={label}
+                                href={href}
+                                className={`flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-bold transition-all ${active
+                                    ? 'bg-blue-50 text-blue-600 border border-blue-200 shadow-sm'
+                                    : 'text-gray-600 hover:bg-gray-100 hover:text-gray-900 border border-transparent'
+                                    }`}
+                            >
+                                <Icon size={16} className="flex-shrink-0" />
+                                {sideOpen && <span>{label}</span>}
+                            </Link>
+                        )
+                    })}
+                </nav>
+
+                <div className="p-3 border-t border-gray-200">
+                    <Link href="/" className={`flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-bold text-gray-600 hover:text-red-600 hover:bg-red-50 transition-all border border-transparent hover:border-red-100`}>
+                        <LogOut size={16} className="flex-shrink-0" />
+                        {sideOpen && <span>Exit Admin</span>}
+                    </Link>
+                </div>
+            </aside>
+
+            {/* Main Content */}
+            <div className="flex-1 overflow-auto">
+                <div className="p-6 md:p-8">
+                    {children}
+                </div>
+            </div>
+        </div>
+    )
+}
