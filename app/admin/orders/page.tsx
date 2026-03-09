@@ -21,7 +21,7 @@ type Order = {
     customer_email: string
     customer_phone: string
     total_amount: number
-    status: 'pending' | 'reserved' | 'completed' | 'cancelled'
+    status: 'pending' | 'pending_payment' | 'reserved' | 'completed' | 'cancelled'
     notes: string
     created_at: string
     items?: OrderItem[]
@@ -71,10 +71,11 @@ export default function AdminOrdersPage() {
     )
 
     const StatusBadge = ({ status }: { status: Order['status'] }) => {
-        if (status === 'pending') return <span className="badge badge-yellow"><Clock size={10} /> Pending</span>
+        if (status === 'pending' || status === 'pending_payment') return <span className="badge badge-yellow"><Clock size={10} /> Pending</span>
         if (status === 'reserved') return <span className="badge badge-blue"><CheckCircle size={10} /> Reserved</span>
         if (status === 'completed') return <span className="badge badge-green"><CheckCircle size={10} /> Completed</span>
-        return <span className="badge badge-red"><XCircle size={10} /> Cancelled</span>
+        if (status === 'cancelled') return <span className="badge badge-red"><XCircle size={10} /> Cancelled</span>
+        return <span className="badge badge-gray">{status}</span>
     }
 
     return (
@@ -197,7 +198,7 @@ export default function AdminOrdersPage() {
 
                         <div className="flex gap-3 pt-6 border-t border-gray-100">
                             <span className="text-[10px] font-bold text-gray-500 mb-2 block uppercase tracking-widest mt-3 mr-4">Update Status:</span>
-                            {selectedOrder.status === 'pending' && (
+                            {(selectedOrder.status === 'pending' || selectedOrder.status === 'pending_payment') && (
                                 <button onClick={() => updateStatus(selectedOrder.id, 'reserved')} className="btn-primary shadow-sm flex-1 justify-center py-2 text-sm">
                                     Approve & Reserve
                                 </button>

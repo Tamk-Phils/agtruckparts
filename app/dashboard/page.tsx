@@ -3,7 +3,7 @@ import { useState, useEffect } from 'react'
 import Link from 'next/link'
 import { useAuth } from '@/components/AuthProvider'
 import { supabase } from '@/lib/supabase'
-import { Package, Clock, CheckCircle, ChevronRight, User, Settings, LogOut, MessageSquare, Search } from 'lucide-react'
+import { Package, Clock, CheckCircle, ChevronRight, User, Settings, LogOut, MessageSquare, Search, XCircle } from 'lucide-react'
 
 type Order = {
     id: string
@@ -75,9 +75,10 @@ export default function UserDashboard() {
     }
 
     const StatusBadge = ({ status }: { status: string }) => {
-        if (status === 'pending_payment') return <span className="flex items-center gap-1 text-[10px] font-bold text-yellow-600 bg-yellow-50 px-2 py-0.5 rounded-full border border-yellow-100 uppercase tracking-tighter"><Clock size={10} /> Pending</span>
+        if (status === 'pending_payment' || status === 'pending') return <span className="flex items-center gap-1 text-[10px] font-bold text-yellow-600 bg-yellow-50 px-2 py-0.5 rounded-full border border-yellow-100 uppercase tracking-tighter"><Clock size={10} /> Pending</span>
         if (status === 'reserved') return <span className="flex items-center gap-1 text-[10px] font-bold text-blue-600 bg-blue-50 px-2 py-0.5 rounded-full border border-blue-100 uppercase tracking-tighter"><CheckCircle size={10} /> Reserved</span>
         if (status === 'completed') return <span className="flex items-center gap-1 text-[10px] font-bold text-green-600 bg-green-50 px-2 py-0.5 rounded-full border border-green-100 uppercase tracking-tighter"><CheckCircle size={10} /> Completed</span>
+        if (status === 'cancelled') return <span className="flex items-center gap-1 text-[10px] font-bold text-red-600 bg-red-50 px-2 py-0.5 rounded-full border border-red-100 uppercase tracking-tighter"><XCircle size={10} /> Cancelled</span>
         return <span className="text-[10px] font-bold text-gray-500 bg-gray-50 px-2 py-0.5 rounded-full border border-gray-100 uppercase tracking-tighter">{status}</span>
     }
 
