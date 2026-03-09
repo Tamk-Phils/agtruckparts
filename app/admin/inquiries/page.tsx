@@ -1,7 +1,7 @@
 'use client'
 import { useState, useEffect } from 'react'
 import { MessageSquare, Phone, Mail, CheckCircle, Clock, AlertCircle, Eye } from 'lucide-react'
-import { supabase } from '@/lib/supabase'
+import { adminSupabase  } from '@/lib/supabase'
 
 type Inquiry = {
     id: string
@@ -31,13 +31,13 @@ export default function AdminInquiriesPage() {
 
     const fetchInquiries = async () => {
         setLoading(true)
-        const { data } = await supabase.from('inquiries').select('*').order('created_at', { ascending: false })
+        const { data } = await adminSupabase.from('inquiries').select('*').order('created_at', { ascending: false })
         if (data) setInquiries(data as Inquiry[])
         setLoading(false)
     }
 
     const updateStatus = async (id: string, status: Inquiry['status']) => {
-        const { error } = await supabase.from('inquiries').update({ status }).eq('id', id)
+        const { error } = await adminSupabase.from('inquiries').update({ status }).eq('id', id)
         if (!error) {
             setInquiries(inquiries.map((i) => (i.id === id ? { ...i, status } : i)))
             if (selected?.id === id) setSelected((s) => s ? { ...s, status } : null)

@@ -1,6 +1,6 @@
 'use client'
 import { useState, useEffect } from 'react'
-import { supabase } from '@/lib/supabase'
+import { adminSupabase  } from '@/lib/supabase'
 import { Star, Trash2, CheckCircle, XCircle } from 'lucide-react'
 
 type Review = {
@@ -24,14 +24,14 @@ export default function AdminReviewsPage() {
 
     const fetchReviews = async () => {
         setLoading(true)
-        const { data } = await supabase.from('reviews').select('*').order('created_at', { ascending: false })
+        const { data } = await adminSupabase.from('reviews').select('*').order('created_at', { ascending: false })
         if (data) setReviews(data)
         setLoading(false)
     }
 
     const deleteReview = async (id: string) => {
         if (!confirm('Delete this review?')) return
-        const { error } = await supabase.from('reviews').delete().eq('id', id)
+        const { error } = await adminSupabase.from('reviews').delete().eq('id', id)
         if (!error) {
             setReviews(reviews.filter(r => r.id !== id))
         } else {

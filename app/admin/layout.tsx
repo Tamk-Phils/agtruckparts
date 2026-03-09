@@ -3,7 +3,7 @@ import { useState, useEffect } from 'react'
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 import { LayoutDashboard, Package, MessageSquare, Star, LogOut, Menu, X, Settings, Bell, Users } from 'lucide-react'
-import { supabase } from '@/lib/supabase'
+import { adminSupabase } from '@/lib/supabase'
 
 const ADMIN_NAV = [
     { label: 'Dashboard', href: '/admin', Icon: LayoutDashboard },
@@ -29,7 +29,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
         let chatChannel: any;
 
         const checkAuth = async () => {
-            const { data: { session } } = await supabase.auth.getSession()
+            const { data: { session } } = await adminSupabase.auth.getSession()
             const adminEmail = process.env.NEXT_PUBLIC_ADMIN_EMAIL
 
             if (!session || session.user.email !== adminEmail) {
@@ -39,7 +39,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
                 setLoading(false)
 
                 // Initialize channels only after authorization
-                ordersChannel = supabase.channel('admin_order_alerts')
+                ordersChannel = adminSupabase.channel('admin_order_alerts')
                     .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'orders' }, (payload) => {
                         const id = Date.now()
                         setToast({ message: `New Order Received from ${payload.new.customer_name}!`, href: '/admin/orders', id })
@@ -49,7 +49,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
                     })
                     .subscribe()
 
-                inquiriesChannel = supabase.channel('admin_inquiry_alerts')
+                inquiriesChannel = adminSupabase.channel('admin_inquiry_alerts')
                     .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'inquiries' }, (payload) => {
                         const id = Date.now()
                         setToast({ message: `New Request from ${payload.new.name}!`, href: '/admin/inquiries', id })
@@ -59,7 +59,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
                     })
                     .subscribe()
 
-                chatChannel = supabase.channel('admin_chat_alerts')
+                chatChannel = adminSupabase.channel('admin_chat_alerts')
                     .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'chat_messages' }, (payload) => {
                         if (payload.new.sender === 'user') {
                             const id = Date.now()
@@ -84,9 +84,9 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
         checkAuth()
 
         return () => {
-            if (ordersChannel) supabase.removeChannel(ordersChannel)
-            if (inquiriesChannel) supabase.removeChannel(inquiriesChannel)
-            if (chatChannel) supabase.removeChannel(chatChannel)
+            if (ordersChannel) adminSupabase.removeChannel(ordersChannel)
+            if (inquiriesChannel) adminSupabase.removeChannel(inquiriesChannel)
+            if (chatChannel) adminSupabase.removeChannel(chatChannel)
         }
     }, [])
 

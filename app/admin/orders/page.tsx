@@ -1,6 +1,6 @@
 'use client'
 import { useState, useEffect } from 'react'
-import { supabase } from '@/lib/supabase'
+import { adminSupabase  } from '@/lib/supabase'
 import { CheckCircle, Clock, Search, XCircle, Eye } from 'lucide-react'
 
 type OrderItem = {
@@ -39,7 +39,7 @@ export default function AdminOrdersPage() {
 
     const fetchOrders = async () => {
         setLoading(true)
-        const { data, error } = await supabase
+        const { data, error } = await adminSupabase
             .from('orders')
             .select(`
                 *,
@@ -55,7 +55,7 @@ export default function AdminOrdersPage() {
     }
 
     const updateStatus = async (id: string, status: Order['status']) => {
-        const { error } = await supabase.from('orders').update({ status }).eq('id', id)
+        const { error } = await adminSupabase.from('orders').update({ status }).eq('id', id)
         if (!error) {
             setOrders(orders.map(o => o.id === id ? { ...o, status } : o))
             if (selectedOrder?.id === id) {

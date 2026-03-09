@@ -1,6 +1,6 @@
 'use client'
 import { useState, useEffect } from 'react'
-import { supabase, Product, Review, Inquiry } from '@/lib/supabase'
+import { adminSupabase, Product, Review, Inquiry  } from '@/lib/supabase'
 import { Package, MessageSquare, Star, TrendingUp, CheckCircle, Clock, AlertCircle, Loader2 } from 'lucide-react'
 import Link from 'next/link'
 
@@ -25,19 +25,19 @@ export default function AdminDashboard() {
         setLoading(true)
         try {
             // Fetch Products
-            const { data: products } = await supabase.from('products').select('*').order('created_at', { ascending: false })
+            const { data: products } = await adminSupabase.from('products').select('*').order('created_at', { ascending: false })
             const p = products || []
             const inStock = p.filter(item => item.in_stock).length
 
             // Fetch Reviews
-            const { data: reviews } = await supabase.from('reviews').select('*').order('created_at', { ascending: false })
+            const { data: reviews } = await adminSupabase.from('reviews').select('*').order('created_at', { ascending: false })
             const r = reviews || []
             const avgRating = r.length > 0
                 ? (r.reduce((acc, curr) => acc + curr.rating, 0) / r.length).toFixed(1)
                 : '0.0'
 
             // Fetch Inquiries
-            const { count: openInquiries } = await supabase
+            const { count: openInquiries } = await adminSupabase
                 .from('inquiries')
                 .select('*', { count: 'exact', head: true })
                 .eq('status', 'new')

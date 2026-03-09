@@ -1,7 +1,7 @@
 'use client'
 import { useState, useEffect } from 'react'
 import { CATEGORIES } from '@/lib/data'
-import { supabase, Product } from '@/lib/supabase'
+import { adminSupabase, Product  } from '@/lib/supabase'
 import { Plus, Pencil, Trash2, CheckCircle, XCircle, X, Save, Upload, Loader2 } from 'lucide-react'
 import Image from 'next/image'
 
@@ -23,7 +23,7 @@ export default function AdminProductsPage() {
 
     const fetchProducts = async () => {
         setLoading(true)
-        const { data, error } = await supabase.from('products').select('*').order('created_at', { ascending: false })
+        const { data, error } = await adminSupabase.from('products').select('*').order('created_at', { ascending: false })
         if (data) setProducts(data)
         setLoading(false)
     }
@@ -43,12 +43,12 @@ export default function AdminProductsPage() {
             const fileName = `${Math.random().toString(36).substring(2)}.${fileExt}`
             const filePath = `${fileName}`
 
-            const { error: uploadError } = await supabase.storage.from('product-images').upload(filePath, file)
+            const { error: uploadError } = await adminSupabase.storage.from('product-images').upload(filePath, file)
             if (uploadError) {
                 console.error("Upload Error:", uploadError)
                 continue
             }
-            const { data } = supabase.storage.from('product-images').getPublicUrl(filePath)
+            const { data } = adminSupabase.storage.from('product-images').getPublicUrl(filePath)
             newImages.push(data.publicUrl)
         }
 
@@ -87,13 +87,13 @@ export default function AdminProductsPage() {
                     featured: editing.featured ?? false,
                     images: editing.images || []
                 }
-                const { error, data } = await supabase.from('products').insert([insertData]).select()
+                const { error, data } = await adminSupabase.from('products').insert([insertData]).select()
                 if (error) {
                     console.error("Supabase Insert Error:", error)
                     throw error
                 }
             } else {
-                const { error } = await supabase.from('products').update(editing).eq('id', editing.id)
+                const { error } = await adminSupabase.from('products').update(editing).eq('id', editing.id)
                 if (error) throw error
             }
             await fetchProducts()
@@ -106,7 +106,7 @@ export default function AdminProductsPage() {
 
     const remove = async (id: string) => {
         if (confirm('Delete this product?')) {
-            const { error } = await supabase.from('products').delete().eq('id', id)
+            const { error } = await adminSupabase.from('products').delete().eq('id', id)
             if (!error) {
                 setProducts(products.filter((p) => p.id !== id))
             } else {

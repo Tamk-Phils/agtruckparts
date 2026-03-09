@@ -1,7 +1,7 @@
 'use client'
 import { useState, useEffect } from 'react'
 import Link from 'next/link'
-import { supabase } from '@/lib/supabase'
+import { adminSupabase  } from '@/lib/supabase'
 import { Users as UsersIcon, Mail, Calendar, Search, MessageCircle } from 'lucide-react'
 
 type CustomerProfile = {
@@ -21,7 +21,7 @@ export default function AdminUsersPage() {
             const profilesMap = new Map<string, CustomerProfile>()
 
             // 1. Fetch from Orders
-            const { data: orders } = await supabase.from('orders').select('customer_name, customer_email, created_at').order('created_at', { ascending: false })
+            const { data: orders } = await adminSupabase.from('orders').select('customer_name, customer_email, created_at').order('created_at', { ascending: false })
             if (orders) {
                 orders.forEach(o => {
                     const email = o.customer_email?.toLowerCase().trim()
@@ -32,7 +32,7 @@ export default function AdminUsersPage() {
             }
 
             // 2. Fetch from Inquiries
-            const { data: inquiries } = await supabase.from('inquiries').select('name, email, created_at').order('created_at', { ascending: false })
+            const { data: inquiries } = await adminSupabase.from('inquiries').select('name, email, created_at').order('created_at', { ascending: false })
             if (inquiries) {
                 inquiries.forEach(i => {
                     const email = i.email?.toLowerCase().trim()
@@ -56,13 +56,13 @@ export default function AdminUsersPage() {
 
         try {
             // Delete orders (this should cascade if configured, but let's be explicit if not sure)
-            await supabase.from('orders').delete().ilike('customer_email', userEmail)
+            await adminSupabase.from('orders').delete().ilike('customer_email', userEmail)
 
             // Delete inquiries
-            await supabase.from('inquiries').delete().ilike('email', userEmail)
+            await adminSupabase.from('inquiries').delete().ilike('email', userEmail)
 
             // Delete chat messages where message starts with [email]
-            await supabase.from('chat_messages').delete().like('message', `[${userEmail}]%`)
+            await adminSupabase.from('chat_messages').delete().like('message', `[${userEmail}]%`)
 
             // Update local state
             setUsers(prev => prev.filter(u => u.email !== userEmail))

@@ -5,6 +5,12 @@ const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || 'placeholde
 
 export const supabase = createClient(supabaseUrl, supabaseAnonKey)
 
+export const adminSupabase = createClient(supabaseUrl, supabaseAnonKey, {
+    auth: {
+        storageKey: 'ag-admin-auth-token',
+    }
+})
+
 export type Product = {
     id: string
     name: string

@@ -1,6 +1,6 @@
 'use client'
 import { useState } from 'react'
-import { supabase } from '@/lib/supabase'
+import { supabase, adminSupabase } from '@/lib/supabase'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import { Loader2, ArrowLeft } from 'lucide-react'
@@ -28,16 +28,21 @@ export default function LoginPage() {
                 alert("Sign up successful! You can now log in.")
                 setIsSignUp(false)
             } else {
-                const { error: signInError } = await supabase.auth.signInWithPassword({
-                    email,
-                    password,
-                })
-                if (signInError) throw signInError
-
                 const adminEmail = process.env.NEXT_PUBLIC_ADMIN_EMAIL
+
                 if (email === adminEmail) {
+                    const { error: signInError } = await adminSupabase.auth.signInWithPassword({
+                        email,
+                        password,
+                    })
+                    if (signInError) throw signInError
                     router.push('/admin')
                 } else {
+                    const { error: signInError } = await supabase.auth.signInWithPassword({
+                        email,
+                        password,
+                    })
+                    if (signInError) throw signInError
                     router.push('/shop')
                 }
                 router.refresh()

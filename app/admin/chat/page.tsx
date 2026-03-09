@@ -2,7 +2,7 @@
 import { useState, useEffect, useRef, Suspense } from 'react'
 import { useSearchParams } from 'next/navigation'
 import { MessageCircle, Search, Clock, Check, Send, User, X } from 'lucide-react'
-import { supabase, ChatMessage } from '@/lib/supabase'
+import { adminSupabase, ChatMessage  } from '@/lib/supabase'
 
 type ChatSession = {
     session_id: string
@@ -24,7 +24,7 @@ function ChatContent() {
     useEffect(() => {
         const fetchInitialData = async () => {
             // Get all messages to build sessions
-            const { data } = await supabase
+            const { data } = await adminSupabase
                 .from('chat_messages')
                 .select('*')
                 .order('created_at', { ascending: false })
@@ -63,7 +63,7 @@ function ChatContent() {
         fetchInitialData()
 
         // Subscribe to all new messages
-        const channel = supabase.channel('admin_global_chat')
+        const channel = adminSupabase.channel('admin_global_chat')
             .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'chat_messages' }, (payload) => {
                 const newMsg = payload.new as ChatMessage
 
@@ -101,14 +101,14 @@ function ChatContent() {
             })
             .subscribe()
 
-        return () => { supabase.removeChannel(channel) }
+        return () => { adminSupabase.removeChannel(channel) }
     }, [activeSession]) // Added activeSession dependency so the closure has the latest active session
 
     // Fetch messages when active session changes
     useEffect(() => {
         if (!activeSession) return
         const fetchActiveMessages = async () => {
-            const { data } = await supabase
+            const { data } = await adminSupabase
                 .from('chat_messages')
                 .select('*')
                 .eq('session_id', activeSession)
@@ -129,7 +129,7 @@ function ChatContent() {
         if (!activeSession) return
         if (!confirm('Are you sure you want to permanently delete this conversation and all its history?')) return
 
-        const { error } = await supabase
+        const { error } = await adminSupabase
             .from('chat_messages')
             .delete()
             .eq('session_id', activeSession)
@@ -161,7 +161,7 @@ function ChatContent() {
         }
         setMessages(prev => [...prev, tempMsg])
 
-        await supabase.from('chat_messages').insert([{
+        await adminSupabase.from('chat_messages').insert([{
             session_id: activeSession,
             sender: 'agent',
             message: msgText
