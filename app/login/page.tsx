@@ -29,7 +29,7 @@ export default function LoginPage() {
                 alert("Sign up successful! You can now log in.")
                 setIsSignUp(false)
             } else {
-                const adminEmail = process.env.NEXT_PUBLIC_ADMIN_EMAIL?.trim().toLowerCase()
+                const adminEmail = (process.env.NEXT_PUBLIC_ADMIN_EMAIL || 'agtruckbedsandparts@gmail.com').trim().toLowerCase()
 
                 if (cleanedEmail.toLowerCase() === adminEmail) {
                     const { error: signInError } = await adminSupabase.auth.signInWithPassword({
