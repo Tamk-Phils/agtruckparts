@@ -1,8 +1,9 @@
 'use client'
 import { useState, useEffect } from 'react'
-import { adminSupabase, Product, Review, Inquiry  } from '@/lib/supabase'
+import { adminSupabase, Product, Review, Inquiry } from '@/lib/supabase'
 import { Package, MessageSquare, Star, TrendingUp, CheckCircle, Clock, AlertCircle, Loader2 } from 'lucide-react'
 import Link from 'next/link'
+import Image from 'next/image'
 
 export default function AdminDashboard() {
     const [stats, setStats] = useState({
@@ -150,11 +151,13 @@ export default function AdminDashboard() {
                         {recentReviews.length > 0 ? recentReviews.map((r) => (
                             <div key={r.id} className="px-6 py-4 flex items-center justify-between gap-4 hover:bg-gray-50 transition-colors">
                                 <div className="flex items-center gap-3 min-w-0">
-                                    <div className="w-10 h-10 rounded-full border border-gray-200 overflow-hidden flex-shrink-0 shadow-sm">
-                                        <img
+                                    <div className="w-10 h-10 rounded-full border border-gray-200 overflow-hidden flex-shrink-0 shadow-sm relative">
+                                        <Image
                                             src={`https://i.pravatar.cc/150?u=${r.author.toLowerCase().replace(/\s/g, '')}`}
                                             alt={r.author}
-                                            className="w-full h-full object-cover"
+                                            fill
+                                            className="object-cover"
+                                            unoptimized
                                         />
                                     </div>
                                     <div className="min-w-0">

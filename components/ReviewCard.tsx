@@ -1,4 +1,5 @@
 import { Star, MapPin, CheckCircle } from 'lucide-react'
+import Image from 'next/image'
 
 type Review = {
     id: string
@@ -36,10 +37,13 @@ export default function ReviewCard({ review }: { review: Review }) {
             <div className="flex items-center justify-between mt-5 pt-4 border-t border-gray-100">
                 <div className="flex items-center gap-3">
                     <div className="relative w-10 h-10 rounded-full overflow-hidden border border-gray-200 shadow-sm flex-shrink-0">
-                        <img
+                        <Image
                             src={review.avatar}
                             alt={review.author}
+                            width={40}
+                            height={40}
                             className="w-full h-full object-cover"
+                            unoptimized
                         />
                     </div>
                     <div>
