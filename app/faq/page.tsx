@@ -9,7 +9,7 @@ export const metadata: Metadata = {
 const FAQS = [
     {
         q: 'Do you accept online payment?',
-        a: 'No. We do not process any payments online. All transactions are done in person at our yard in Buffalo, TX. Browse our inventory online, contact us to confirm availability, then come pick up your part.',
+        a: 'Yes. We do accept online payment.Transactions are done online. Browse our inventory online, contact us to confirm availability, then come pick up your part or have it shipped to you.',
     },
     {
         q: 'How do I know if a part will fit my truck?',

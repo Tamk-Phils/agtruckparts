@@ -26,7 +26,6 @@ const NAV_LINKS = [
 
 export default function Navbar() {
     const [open, setOpen] = useState(false)
-    const [scrolled, setScrolled] = useState(false)
     const [shopOpen, setShopOpen] = useState(false)
     const [cartOpen, setCartOpen] = useState(false)
     const pathname = usePathname()
@@ -34,49 +33,27 @@ export default function Navbar() {
     const { user, signOut } = useAuth()
 
     const cartCount = items.reduce((sum, item) => sum + item.quantity, 0)
-
-    const isHome = pathname === '/'
-    const isTransparent = isHome && !scrolled
     const isAdmin = pathname.startsWith('/admin')
-
-    useEffect(() => {
-        const onScroll = () => setScrolled(window.scrollY > 30)
-        window.addEventListener('scroll', onScroll)
-        return () => window.removeEventListener('scroll', onScroll)
-    }, [])
 
     if (isAdmin) return null
 
     return (
         <>
-            <header
-                className={`fixed top-0 left-0 right-0 z-50 transition-all duration-300 ${scrolled ? 'nav-glass shadow-sm' : 'bg-transparent'
-                    }`}
-            >
-                <div className={`transition-all duration-300 ${isTransparent ? 'hidden' : 'border-b border-gray-200/50 bg-gray-100/80 hidden md:flex items-center justify-end gap-6 px-8 py-1.5 text-xs text-gray-500'}`}>
-                    <a href="tel:+19036509882" className="flex items-center gap-1.5 hover:text-gray-900 transition-colors">
-                        <Phone size={11} /> +1(903) 650-9882
-                    </a>
-                    <a href="mailto:agtruckbedsandparts@gmail.com" className="flex items-center gap-1.5 hover:text-gray-900 transition-colors">
-                        <Mail size={11} /> agtruckbedsandparts@gmail.com
-                    </a>
-                </div>
-
-                <nav className="flex items-center justify-between px-6 md:px-12 py-5 max-w-[1400px] mx-auto">
-                    {/* Logo */}
-                    <Link href="/" className="flex items-center gap-3 group">
-                        <img
-                            src="/images/logo.png"
-                            alt="AG Truck Beds Logo"
-                            className={`h-10 md:h-12 w-auto transition-transform group-hover:scale-105 ${isTransparent ? 'brightness-0 invert' : 'mix-blend-multiply'}`}
-                        />
+            {/* Stable Sticky Navbar */}
+            <header className="fixed top-0 left-0 right-0 z-[50] bg-white border-b border-gray-100 py-3 shadow-sm">
+                <nav className="flex items-center justify-between px-6 md:px-12 max-w-[1400px] mx-auto">
+                    {/* Logo - Consistent Styling */}
+                    <Link href="/" className="flex items-center gap-3 group transition-transform hover:scale-105 active:scale-95 duration-300">
+                        <div className="w-10 h-10 bg-white rounded-xl shadow-lg shadow-black/5 flex items-center justify-center border border-gray-100 p-1 overflow-hidden">
+                            <img
+                                src="/images/logo.png"
+                                alt="AG Truck Beds"
+                                className="w-full h-full object-contain"
+                            />
+                        </div>
                         <div className="flex flex-col">
-                            <span className={`text-xl md:text-2xl font-black tracking-tighter leading-none ${isTransparent ? 'text-white' : 'text-gray-900'} uppercase`}>
-                                AG TRUCK BEDS
-                            </span>
-                            <span className={`text-[10px] font-bold tracking-[0.3em] ${isTransparent ? 'text-blue-400' : 'text-blue-600'} uppercase mt-0.5`}>
-                                & PARTS
-                            </span>
+                            <span className="text-xl md:text-2xl font-black text-gray-900 leading-none tracking-tighter">AG TRUCK BEDS</span>
+                            <span className="text-[10px] font-bold text-blue-600 leading-none tracking-[0.3em] mt-0.5 uppercase">& PARTS</span>
                         </div>
                     </Link>
 
@@ -86,7 +63,7 @@ export default function Navbar() {
                             link.sub ? (
                                 <li key={link.label} className="relative">
                                     <button
-                                        className={`flex items-center gap-1 px-3 py-2 text-[14px] rounded-lg transition-all font-medium ${isTransparent ? 'text-white/90 hover:text-white hover:bg-white/10' : 'text-gray-600 hover:text-gray-900 hover:bg-black/5'}`}
+                                        className="flex items-center gap-1 px-3 py-2 text-[14px] rounded-lg transition-all font-medium text-gray-600 hover:text-gray-900 hover:bg-black/5"
                                         onMouseEnter={() => setShopOpen(true)}
                                         onMouseLeave={() => setShopOpen(false)}
                                     >
@@ -114,7 +91,7 @@ export default function Navbar() {
                                 <li key={link.label}>
                                     <Link
                                         href={link.href}
-                                        className={`px-3 py-2 text-[14px] rounded-lg transition-all font-medium block ${isTransparent ? 'text-white/90 hover:text-white hover:bg-white/10' : 'text-gray-600 hover:text-gray-900 hover:bg-black/5'}`}
+                                        className="px-3 py-2 text-[14px] rounded-lg transition-all font-medium block text-gray-600 hover:text-gray-900 hover:bg-black/5"
                                     >
                                         {link.label}
                                     </Link>
@@ -127,11 +104,11 @@ export default function Navbar() {
                     <div className="hidden md:flex items-center gap-4">
                         <button
                             onClick={() => setCartOpen(true)}
-                            className={`relative p-2 rounded-full transition-colors ${isTransparent ? 'text-white hover:bg-white/10' : 'text-gray-600 hover:bg-black/5 hover:text-gray-900'}`}
+                            className="relative p-2 rounded-full transition-colors text-gray-600 hover:bg-black/5 hover:text-gray-900"
                         >
                             <ShoppingCart size={20} />
                             {cartCount > 0 && (
-                                <span className={`absolute -top-1 -right-1 bg-blue-600 text-white text-[10px] font-bold w-5 h-5 flex items-center justify-center rounded-full border-2 shadow-sm ${isTransparent ? 'border-transparent' : 'border-white'}`}>
+                                <span className="absolute -top-1 -right-1 bg-blue-600 text-white text-[10px] font-bold w-5 h-5 flex items-center justify-center rounded-full border-2 border-white shadow-sm">
                                     {cartCount}
                                 </span>
                             )}
@@ -151,7 +128,7 @@ export default function Navbar() {
                             </div>
                         ) : (
                             <>
-                                <Link href="/login" className={`text-[13px] font-bold px-4 py-2 rounded-xl transition-all uppercase tracking-widest ${isTransparent ? 'text-white hover:bg-white/10' : 'text-gray-600 hover:bg-black/5 hover:text-gray-900'}`}>
+                                <Link href="/login" className="text-[13px] font-bold px-4 py-2 rounded-xl transition-all uppercase tracking-widest text-gray-600 hover:bg-black/5 hover:text-gray-900">
                                     Log In
                                 </Link>
                                 <Link href="/contact" className="btn-primary">
@@ -165,7 +142,7 @@ export default function Navbar() {
                     <div className="md:hidden flex items-center gap-3">
                         <button
                             onClick={() => setCartOpen(true)}
-                            className={`relative p-2.5 rounded-full transition-all active:scale-95 ${isTransparent ? 'text-white bg-white/10' : 'text-gray-900 bg-gray-100 border border-gray-200 shadow-sm'}`}
+                            className="relative p-2.5 rounded-full transition-all active:scale-95 text-gray-900 bg-gray-100 border border-gray-200 shadow-sm"
                         >
                             <ShoppingCart size={20} />
                             {cartCount > 0 && (
@@ -175,7 +152,7 @@ export default function Navbar() {
                             )}
                         </button>
                         <button
-                            className={`p-2.5 rounded-full transition-all active:scale-90 ${isTransparent ? 'text-white bg-white/10' : 'text-gray-900 bg-gray-100 border border-gray-200 shadow-sm'}`}
+                            className="p-2.5 rounded-full transition-all active:scale-90 text-gray-900 bg-gray-100 border border-gray-200 shadow-sm"
                             onClick={() => setOpen(!open)}
                             aria-label="Toggle menu"
                         >

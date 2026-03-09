@@ -20,49 +20,86 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
     const [sideOpen, setSideOpen] = useState(true)
     const [toast, setToast] = useState<{ message: string, href: string, id: number } | null>(null)
     const pathname = usePathname()
+    const [loading, setLoading] = useState(true)
+    const [isAuthorized, setIsAuthorized] = useState(false)
 
     useEffect(() => {
-        // Orders Channel
-        const ordersChannel = supabase.channel('admin_order_alerts')
-            .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'orders' }, (payload) => {
-                const id = Date.now()
-                setToast({ message: `New Order Received from ${payload.new.customer_name}!`, href: '/admin/orders', id })
-                setTimeout(() => {
-                    setToast(current => current?.id === id ? null : current)
-                }, 8000)
-            })
-            .subscribe()
+        let ordersChannel: any;
+        let inquiriesChannel: any;
+        let chatChannel: any;
 
-        // Inquiries Channel
-        const inquiriesChannel = supabase.channel('admin_inquiry_alerts')
-            .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'inquiries' }, (payload) => {
-                const id = Date.now()
-                setToast({ message: `New Request from ${payload.new.name}!`, href: '/admin/inquiries', id })
-                setTimeout(() => {
-                    setToast(current => current?.id === id ? null : current)
-                }, 8000)
-            })
-            .subscribe()
+        const checkAuth = async () => {
+            const { data: { session } } = await supabase.auth.getSession()
+            const adminEmail = process.env.NEXT_PUBLIC_ADMIN_EMAIL
 
-        // Chat Messages Channel (Only alert if the sender is not admin and we aren't already on the chat page)
-        const chatChannel = supabase.channel('admin_chat_alerts')
-            .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'chat_messages' }, (payload) => {
-                if (payload.new.sender !== 'agent' && !window.location.pathname.includes('/admin/chat')) {
-                    const id = Date.now()
-                    setToast({ message: `New Live Chat Message!`, href: '/admin/chat', id })
-                    setTimeout(() => {
-                        setToast(current => current?.id === id ? null : current)
-                    }, 5000)
-                }
-            })
-            .subscribe()
+            if (!session || session.user.email !== adminEmail) {
+                window.location.href = '/login'
+            } else {
+                setIsAuthorized(true)
+                setLoading(false)
+
+                // Initialize channels only after authorization
+                ordersChannel = supabase.channel('admin_order_alerts')
+                    .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'orders' }, (payload) => {
+                        const id = Date.now()
+                        setToast({ message: `New Order Received from ${payload.new.customer_name}!`, href: '/admin/orders', id })
+                        setTimeout(() => {
+                            setToast(current => current?.id === id ? null : current)
+                        }, 8000)
+                    })
+                    .subscribe()
+
+                inquiriesChannel = supabase.channel('admin_inquiry_alerts')
+                    .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'inquiries' }, (payload) => {
+                        const id = Date.now()
+                        setToast({ message: `New Request from ${payload.new.name}!`, href: '/admin/inquiries', id })
+                        setTimeout(() => {
+                            setToast(current => current?.id === id ? null : current)
+                        }, 8000)
+                    })
+                    .subscribe()
+
+                chatChannel = supabase.channel('admin_chat_alerts')
+                    .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'chat_messages' }, (payload) => {
+                        if (payload.new.sender === 'user') {
+                            const id = Date.now()
+                            const match = payload.new.message.match(/^\[(.*?)\]/)
+                            const sender = match ? match[1] : 'A customer'
+                            const text = payload.new.message.replace(/^\[.*?\]\s*/, '')
+                            const targetEmail = payload.new.user_email
+
+                            setToast({
+                                message: `${sender}: ${text.substring(0, 30)}${text.length > 30 ? '...' : ''}`,
+                                href: targetEmail ? `/admin/chat?email=${targetEmail}` : '/admin/chat',
+                                id
+                            })
+                            setTimeout(() => {
+                                setToast(current => current?.id === id ? null : current)
+                            }, 8000)
+                        }
+                    })
+                    .subscribe()
+            }
+        }
+        checkAuth()
 
         return () => {
-            supabase.removeChannel(ordersChannel)
-            supabase.removeChannel(inquiriesChannel)
-            supabase.removeChannel(chatChannel)
+            if (ordersChannel) supabase.removeChannel(ordersChannel)
+            if (inquiriesChannel) supabase.removeChannel(inquiriesChannel)
+            if (chatChannel) supabase.removeChannel(chatChannel)
         }
     }, [])
+
+    if (loading || !isAuthorized) {
+        return (
+            <div className="min-h-screen flex items-center justify-center bg-gray-50">
+                <div className="flex flex-col items-center gap-4">
+                    <div className="w-12 h-12 border-4 border-blue-600 border-t-transparent rounded-full animate-spin"></div>
+                    <p className="text-sm font-bold text-gray-500 uppercase tracking-widest">Verifying Admin Access...</p>
+                </div>
+            </div>
+        )
+    }
 
     return (
         <div className="min-h-screen flex bg-gray-50" style={{ paddingTop: 0 }}>

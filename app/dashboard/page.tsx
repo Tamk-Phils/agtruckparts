@@ -3,7 +3,7 @@ import { useState, useEffect } from 'react'
 import Link from 'next/link'
 import { useAuth } from '@/components/AuthProvider'
 import { supabase } from '@/lib/supabase'
-import { Package, Clock, CheckCircle, ChevronRight, User, Settings, LogOut } from 'lucide-react'
+import { Package, Clock, CheckCircle, ChevronRight, User, Settings, LogOut, MessageSquare, Search } from 'lucide-react'
 
 type Order = {
     id: string
@@ -16,23 +16,51 @@ type Order = {
 export default function UserDashboard() {
     const { user, signOut } = useAuth()
     const [orders, setOrders] = useState<Order[]>([])
+    const [chats, setChats] = useState<any[]>([])
     const [loading, setLoading] = useState(true)
+    const [activeTab, setActiveTab] = useState<'reservations' | 'chats'>('reservations')
 
     useEffect(() => {
         if (!user) return
 
-        const fetchUserOrders = async () => {
-            const { data, error } = await supabase
+        const fetchData = async () => {
+            setLoading(true)
+            // Fetch Orders
+            const { data: orderData } = await supabase
                 .from('orders')
                 .select('*')
                 .eq('customer_email', user.email)
                 .order('created_at', { ascending: false })
 
-            if (data) setOrders(data)
+            if (orderData) setOrders(orderData)
+
+            // Fetch Chat Sessions
+            const { data: chatData } = await supabase
+                .from('chat_messages')
+                .select('*')
+                .eq('user_email', user.email)
+                .order('created_at', { ascending: false })
+
+            if (chatData) {
+                // Group by session_id
+                const sessions: any = {}
+                chatData.forEach((msg: any) => {
+                    if (!sessions[msg.session_id]) {
+                        sessions[msg.session_id] = {
+                            id: msg.session_id,
+                            lastMessage: msg.message,
+                            date: msg.created_at,
+                            unread: false // Logic for unread could be added later
+                        }
+                    }
+                })
+                setChats(Object.values(sessions))
+            }
+
             setLoading(false)
         }
 
-        fetchUserOrders()
+        fetchData()
     }, [user])
 
     if (!user) {
@@ -68,9 +96,19 @@ export default function UserDashboard() {
                             <p className="text-xs text-gray-400 font-bold tracking-widest uppercase mt-1">{user.email}</p>
 
                             <div className="mt-8 flex flex-col gap-2">
-                                <button className="flex items-center gap-3 px-4 py-3 rounded-xl bg-blue-50 text-blue-600 font-bold text-sm border border-blue-100 transition-all">
+                                <button
+                                    onClick={() => setActiveTab('reservations')}
+                                    className={`flex items-center gap-3 px-4 py-3 rounded-xl font-bold text-sm border transition-all ${activeTab === 'reservations' ? 'bg-blue-50 text-blue-600 border-blue-100' : 'hover:bg-gray-50 text-gray-500 border-transparent'}`}
+                                >
                                     <Package size={18} />
                                     My Reservations
+                                </button>
+                                <button
+                                    onClick={() => setActiveTab('chats')}
+                                    className={`flex items-center gap-3 px-4 py-3 rounded-xl font-bold text-sm border transition-all ${activeTab === 'chats' ? 'bg-blue-50 text-blue-600 border-blue-100' : 'hover:bg-gray-50 text-gray-500 border-transparent'}`}
+                                >
+                                    <MessageSquare size={18} />
+                                    My Messages
                                 </button>
                                 <button className="flex items-center gap-3 px-4 py-3 rounded-xl hover:bg-gray-50 text-gray-500 font-bold text-sm transition-all">
                                     <Settings size={18} />
@@ -101,8 +139,12 @@ export default function UserDashboard() {
                     {/* Main Content */}
                     <main className="flex-1">
                         <div className="mb-8">
-                            <h1 className="text-4xl font-black text-gray-900 tracking-tighter uppercase">MY RESERVATIONS</h1>
-                            <p className="text-sm font-medium text-gray-500 mt-1 uppercase tracking-widest">Track your truck parts and equipment orders</p>
+                            <h1 className="text-4xl font-black text-gray-900 tracking-tighter uppercase">
+                                {activeTab === 'reservations' ? 'MY RESERVATIONS' : 'MY MESSAGES'}
+                            </h1>
+                            <p className="text-sm font-medium text-gray-500 mt-1 uppercase tracking-widest">
+                                {activeTab === 'reservations' ? 'Track your truck parts and equipment orders' : 'Ongoing and past conversations with support'}
+                            </p>
                         </div>
 
                         {loading ? (
@@ -111,43 +153,90 @@ export default function UserDashboard() {
                                     <div key={i} className="h-24 bg-gray-100 rounded-3xl animate-pulse" />
                                 ))}
                             </div>
-                        ) : orders.length === 0 ? (
-                            <div className="bg-white rounded-3xl p-12 text-center border border-gray-100 shadow-sm">
-                                <div className="w-16 h-16 bg-gray-50 rounded-full flex items-center justify-center mx-auto mb-4 text-gray-300">
-                                    <Package size={32} />
-                                </div>
-                                <h3 className="text-lg font-bold text-gray-900 mb-2">No Reservations Found</h3>
-                                <p className="text-sm text-gray-500 mb-6">You haven't made any truck part reservations yet.</p>
-                                <Link href="/shop" className="btn-primary inline-flex">Explore Catalog</Link>
-                            </div>
-                        ) : (
-                            <div className="space-y-4">
-                                {orders.map(order => (
-                                    <div key={order.id} className="bg-white rounded-3xl p-6 border border-gray-100 shadow-sm hover:shadow-md transition-shadow flex items-center justify-between group">
-                                        <div className="flex items-center gap-6">
-                                            <div className="w-12 h-12 bg-gray-50 rounded-2xl flex items-center justify-center text-blue-600 font-black border border-gray-100 group-hover:bg-blue-600 group-hover:text-white transition-colors">
-                                                #{order.id.slice(0, 4).toUpperCase()}
-                                            </div>
-                                            <div>
-                                                <div className="flex items-center gap-3 mb-1">
-                                                    <p className="font-black text-gray-900 tracking-tight">ORDER #{order.id.slice(0, 8).toUpperCase()}</p>
-                                                    <StatusBadge status={order.status} />
-                                                </div>
-                                                <p className="text-xs font-bold text-gray-400 uppercase tracking-widest">
-                                                    {new Date(order.created_at).toLocaleDateString(undefined, { year: 'numeric', month: 'long', day: 'numeric' })}
-                                                </p>
-                                            </div>
-                                        </div>
-                                        <div className="flex items-center gap-8">
-                                            <div className="text-right">
-                                                <p className="text-xs font-bold text-gray-400 uppercase tracking-widest mb-1">Total Amount</p>
-                                                <p className="text-lg font-black text-gray-900">${order.total_amount.toLocaleString()}</p>
-                                            </div>
-                                            <ChevronRight className="text-gray-300 group-hover:text-blue-600 group-hover:translate-x-1 transition-all" size={20} />
-                                        </div>
+                        ) : activeTab === 'reservations' ? (
+                            orders.length === 0 ? (
+                                <div className="bg-white rounded-3xl p-12 text-center border border-gray-100 shadow-sm">
+                                    <div className="w-16 h-16 bg-gray-50 rounded-full flex items-center justify-center mx-auto mb-4 text-gray-300">
+                                        <Package size={32} />
                                     </div>
-                                ))}
-                            </div>
+                                    <h3 className="text-lg font-bold text-gray-900 mb-2">No Reservations Found</h3>
+                                    <p className="text-sm text-gray-500 mb-6">You haven't made any truck part reservations yet.</p>
+                                    <Link href="/shop" className="btn-primary inline-flex">Explore Catalog</Link>
+                                </div>
+                            ) : (
+                                <div className="space-y-4">
+                                    {orders.map(order => (
+                                        <div key={order.id} className="bg-white rounded-3xl p-6 border border-gray-100 shadow-sm hover:shadow-md transition-shadow flex items-center justify-between group">
+                                            <div className="flex items-center gap-6">
+                                                <div className="w-12 h-12 bg-gray-50 rounded-2xl flex items-center justify-center text-blue-600 font-black border border-gray-100 group-hover:bg-blue-600 group-hover:text-white transition-colors">
+                                                    #{order.id.slice(0, 4).toUpperCase()}
+                                                </div>
+                                                <div>
+                                                    <div className="flex items-center gap-3 mb-1">
+                                                        <p className="font-black text-gray-900 tracking-tight">ORDER #{order.id.slice(0, 8).toUpperCase()}</p>
+                                                        <StatusBadge status={order.status} />
+                                                    </div>
+                                                    <p className="text-xs font-bold text-gray-400 uppercase tracking-widest">
+                                                        {new Date(order.created_at).toLocaleDateString(undefined, { year: 'numeric', month: 'long', day: 'numeric' })}
+                                                    </p>
+                                                </div>
+                                            </div>
+                                            <div className="flex items-center gap-8">
+                                                <div className="text-right">
+                                                    <p className="text-xs font-bold text-gray-400 uppercase tracking-widest mb-1">Total Amount</p>
+                                                    <p className="text-lg font-black text-gray-900">${order.total_amount.toLocaleString()}</p>
+                                                </div>
+                                                <ChevronRight className="text-gray-300 group-hover:text-blue-600 group-hover:translate-x-1 transition-all" size={20} />
+                                            </div>
+                                        </div>
+                                    ))}
+                                </div>
+                            )
+                        ) : (
+                            chats.length === 0 ? (
+                                <div className="bg-white rounded-3xl p-12 text-center border border-gray-100 shadow-sm">
+                                    <div className="w-16 h-16 bg-gray-50 rounded-full flex items-center justify-center mx-auto mb-4 text-gray-300">
+                                        <MessageSquare size={32} />
+                                    </div>
+                                    <h3 className="text-lg font-bold text-gray-900 mb-2">No Conversations</h3>
+                                    <p className="text-sm text-gray-500 mb-6">You haven't started any chats with our support team yet.</p>
+                                    <button onClick={() => { window.dispatchEvent(new CustomEvent('custom:open-chat')); }} className="btn-primary inline-flex">Start Chat</button>
+                                </div>
+                            ) : (
+                                <div className="space-y-4">
+                                    {chats.map(chat => (
+                                        <div
+                                            key={chat.id}
+                                            onClick={() => { window.dispatchEvent(new CustomEvent('custom:open-chat')); }}
+                                            className="bg-white rounded-3xl p-6 border border-gray-100 shadow-sm hover:shadow-md hover:border-blue-100 transition-all cursor-pointer flex items-center justify-between group"
+                                        >
+                                            <div className="flex items-center gap-6">
+                                                <div className="w-12 h-12 bg-gray-50 rounded-2xl flex items-center justify-center text-blue-600 font-black border border-gray-100 group-hover:bg-blue-600 group-hover:text-white transition-colors">
+                                                    <MessageSquare size={20} />
+                                                </div>
+                                                <div className="flex-1 min-w-0">
+                                                    <div className="flex items-center gap-3 mb-1">
+                                                        <p className="font-black text-gray-900 tracking-tight uppercase">Support Session</p>
+                                                        {chat.unread && <span className="w-2 h-2 rounded-full bg-blue-600 animate-pulse" />}
+                                                    </div>
+                                                    <p className="text-xs font-medium text-gray-500 truncate max-w-md">
+                                                        {chat.lastMessage.replace(/\[.*?\]/, '').trim()}
+                                                    </p>
+                                                </div>
+                                            </div>
+                                            <div className="flex items-center gap-8">
+                                                <div className="text-right">
+                                                    <p className="text-[10px] font-bold text-gray-300 uppercase tracking-widest mb-1">Last Update</p>
+                                                    <p className="text-xs font-black text-gray-500">
+                                                        {new Date(chat.date).toLocaleDateString(undefined, { month: 'short', day: 'numeric' })}
+                                                    </p>
+                                                </div>
+                                                <ChevronRight className="text-gray-300 group-hover:text-blue-600 group-hover:translate-x-1 transition-all" size={20} />
+                                            </div>
+                                        </div>
+                                    ))}
+                                </div>
+                            )
                         )}
                     </main>
 

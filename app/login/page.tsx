@@ -33,7 +33,13 @@ export default function LoginPage() {
                     password,
                 })
                 if (signInError) throw signInError
-                router.push('/shop')
+
+                const adminEmail = process.env.NEXT_PUBLIC_ADMIN_EMAIL
+                if (email === adminEmail) {
+                    router.push('/admin')
+                } else {
+                    router.push('/shop')
+                }
                 router.refresh()
             }
         } catch (err: any) {

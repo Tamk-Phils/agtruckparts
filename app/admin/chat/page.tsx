@@ -1,5 +1,6 @@
 'use client'
-import { useState, useEffect, useRef } from 'react'
+import { useState, useEffect, useRef, Suspense } from 'react'
+import { useSearchParams } from 'next/navigation'
 import { MessageCircle, Search, Clock, Check, Send, User, X } from 'lucide-react'
 import { supabase, ChatMessage } from '@/lib/supabase'
 
@@ -10,7 +11,9 @@ type ChatSession = {
     identity: string
 }
 
-export default function AdminChatPage() {
+function ChatContent() {
+    const searchParams = useSearchParams()
+    const targetEmail = searchParams.get('email')
     const [sessions, setSessions] = useState<ChatSession[]>([])
     const [messages, setMessages] = useState<ChatMessage[]>([])
     const [activeSession, setActiveSession] = useState<string | null>(null)
@@ -21,45 +24,38 @@ export default function AdminChatPage() {
     useEffect(() => {
         const fetchInitialData = async () => {
             // Get all messages to build sessions
-            const { data, error } = await supabase
+            const { data } = await supabase
                 .from('chat_messages')
                 .select('*')
                 .order('created_at', { ascending: false })
 
             if (data) {
                 const msgs = data as ChatMessage[]
-
-                // Group by session
                 const sessionMap = new Map<string, ChatSession>()
-
-                // Sort messages by creation date ascending to find the first identity
-                const sortedMsgs = [...msgs].sort((a, b) =>
-                    new Date(a.created_at).getTime() - new Date(b.created_at).getTime()
-                )
+                const sortedMsgs = [...msgs].sort((a, b) => new Date(a.created_at).getTime() - new Date(b.created_at).getTime())
 
                 msgs.forEach(msg => {
                     if (!sessionMap.has(msg.session_id)) {
-                        // Find the first message in this session that has an identity tag [email]
-                        const firstWithIdentity = sortedMsgs.find(m =>
-                            m.session_id === msg.session_id && m.message.startsWith('[')
-                        )
-
+                        const firstWithIdentity = sortedMsgs.find(m => m.session_id === msg.session_id && m.message.startsWith('['))
                         let identity = "Anonymous Visitor"
                         if (firstWithIdentity) {
                             const match = firstWithIdentity.message.match(/^\[(.*?)\]/)
                             if (match) identity = match[1]
                         }
-
-                        sessionMap.set(msg.session_id, {
-                            session_id: msg.session_id,
-                            last_message: msg, // This is the latest message for preview
-                            unread: 0,
-                            identity
-                        })
+                        sessionMap.set(msg.session_id, { session_id: msg.session_id, last_message: msg, unread: 0, identity })
                     }
                 })
 
-                setSessions(Array.from(sessionMap.values()))
+                const sessionsList = Array.from(sessionMap.values())
+                setSessions(sessionsList)
+
+                // AUTO-SELECT session if targetEmail exists
+                if (targetEmail) {
+                    const matchedSession = sessionsList.find(s => s.identity.toLowerCase().includes(targetEmail.toLowerCase()))
+                    if (matchedSession) {
+                        setActiveSession(matchedSession.session_id)
+                    }
+                }
             }
             setLoading(false)
         }
@@ -329,5 +325,13 @@ export default function AdminChatPage() {
                 </div>
             </div>
         </div>
+    )
+}
+
+export default function AdminChatPage() {
+    return (
+        <Suspense fallback={<div className="p-8"><div className="animate-pulse bg-gray-200 h-10 w-48 rounded mb-6"></div></div>}>
+            <ChatContent />
+        </Suspense>
     )
 }

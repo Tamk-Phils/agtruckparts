@@ -1,7 +1,8 @@
 'use client'
 import { useState, useEffect } from 'react'
+import Link from 'next/link'
 import { supabase } from '@/lib/supabase'
-import { Users as UsersIcon, Mail, Calendar, Search } from 'lucide-react'
+import { Users as UsersIcon, Mail, Calendar, Search, MessageCircle } from 'lucide-react'
 
 type CustomerProfile = {
     email: string
@@ -151,12 +152,21 @@ export default function AdminUsersPage() {
                                             </div>
                                         </td>
                                         <td className="p-4 text-center">
-                                            <button
-                                                onClick={() => deleteUser(user.email)}
-                                                className="text-[10px] font-black uppercase tracking-widest text-red-500 hover:text-red-700 hover:bg-red-50 px-3 py-1.5 rounded-lg border border-transparent hover:border-red-100 transition-all"
-                                            >
-                                                Delete
-                                            </button>
+                                            <div className="flex items-center justify-center gap-2">
+                                                <Link
+                                                    href={`/admin/chat?email=${encodeURIComponent(user.email)}`}
+                                                    className="flex items-center gap-1.5 text-[10px] font-black uppercase tracking-widest text-blue-600 hover:text-blue-700 hover:bg-blue-50 px-3 py-1.5 rounded-lg border border-transparent hover:border-blue-100 transition-all"
+                                                >
+                                                    <MessageCircle size={14} />
+                                                    Chat
+                                                </Link>
+                                                <button
+                                                    onClick={() => deleteUser(user.email)}
+                                                    className="text-[10px] font-black uppercase tracking-widest text-red-500 hover:text-red-700 hover:bg-red-50 px-3 py-1.5 rounded-lg border border-transparent hover:border-red-100 transition-all"
+                                                >
+                                                    Delete
+                                                </button>
+                                            </div>
                                         </td>
                                     </tr>
                                 ))

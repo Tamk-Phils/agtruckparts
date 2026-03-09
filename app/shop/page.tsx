@@ -47,7 +47,7 @@ export default function ShopPage() {
     }, [search, category, inStockOnly, sort, products])
 
     return (
-        <div className="min-h-screen pt-20 pb-20 bg-[#f8f9fa]">
+        <div className="min-h-screen pt-24 pb-20 bg-[#f8f9fa]">
             {/* Professional Header */}
             <div className="relative h-[450px] w-full flex items-center overflow-hidden">
                 <Image

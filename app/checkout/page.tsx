@@ -1,12 +1,14 @@
 'use client'
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { useCart } from '@/components/CartProvider'
+import { useAuth } from '@/components/AuthProvider'
 import { supabase } from '@/lib/supabase'
 import { ArrowLeft, CheckCircle, Loader2 } from 'lucide-react'
 import Link from 'next/link'
 
 export default function CheckoutPage() {
     const { items, total, clearCart } = useCart()
+    const { user } = useAuth()
     const [loading, setLoading] = useState(false)
     const [success, setSuccess] = useState(false)
     const [form, setForm] = useState({
@@ -17,20 +19,29 @@ export default function CheckoutPage() {
         notes: ''
     })
 
+    // Pre-fill email if user is logged in
+    useEffect(() => {
+        if (user?.email) {
+            setForm(prev => ({ ...prev, email: user.email || '' }))
+        }
+    }, [user])
+
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault()
         setLoading(true)
 
         try {
+            const customerEmail = user?.email || form.email
+
             // 1. Create order
             const { data: orderData, error: orderError } = await supabase.from('orders').insert([{
                 customer_name: `${form.first_name} ${form.last_name}`,
-                customer_email: form.email,
+                customer_email: customerEmail,
                 customer_phone: form.notes ? `${form.phone} (Notes: ${form.notes})` : form.phone,
                 total_amount: total,
                 reservation_fee: 0,
                 payment_method: 'Pay at Pickup',
-                status: 'pending'
+                status: 'pending_payment'
             }]).select().single()
 
             if (orderError) throw orderError
@@ -63,14 +74,14 @@ export default function CheckoutPage() {
                     <CheckCircle size={64} className="text-green-500 mx-auto mb-6" />
                     <h1 className="text-3xl font-black text-gray-900 mb-4 uppercase tracking-tight">Reservation Confirmed</h1>
                     <p className="text-gray-600 mb-8 font-medium leading-relaxed">
-                        Thank you for reserving your parts with AG Truck Beds. We have received your request and will hold the items for you.
+                        Thank you for reserving your parts with AG Truck Beds. We have received your request and will hold the items for you. Please contact support for guidance on how to proceed
                     </p>
                     <div className="bg-gray-50 p-6 rounded-xl border border-gray-200 mb-8 text-left">
                         <h3 className="font-bold text-gray-900 mb-2 uppercase tracking-tight">Next Steps:</h3>
                         <ul className="text-sm text-gray-600 space-y-2 list-disc list-inside">
-                            <li>Check your email for confirmation.</li>
+                            <li>Contact us.</li>
                             <li>Call us at +1(903) 650-9882 to confirm pickup time.</li>
-                            <li>Payment is collected in-person via Zelle, Chime, Apple Pay, or Cash.</li>
+                            <li>Payment is collected in-person via Zelle, Chime, Apple Pay, CashApp,Wire Transfer, Bank Transfer.</li>
                         </ul>
                     </div>
                     <Link href="/shop" className="btn-primary w-full justify-center">
@@ -119,7 +130,7 @@ export default function CheckoutPage() {
                             <button type="submit" disabled={loading || items.length === 0} className="btn-primary py-4 justify-center mt-4">
                                 {loading ? <Loader2 className="animate-spin" size={20} /> : 'Confirm Reservation'}
                             </button>
-                            <p className="text-center text-xs text-gray-500 mt-2 font-medium">No payment is captured at this step. You will pay upon pickup.</p>
+                            <p className="text-center text-xs text-gray-500 mt-2 font-medium">You will have to contact support through email, phone or through the chat to proceed with payment.</p>
                         </form>
                     </div>
 
@@ -161,8 +172,8 @@ export default function CheckoutPage() {
                             <div className="mt-8 bg-blue-50 border border-blue-100 p-4 rounded-xl flex items-start gap-3 text-blue-800">
                                 <div className="mt-0.5"><CheckCircle size={16} className="text-blue-500" /></div>
                                 <div>
-                                    <p className="text-xs font-bold uppercase tracking-wider mb-1">Payment Options at Pickup</p>
-                                    <p className="text-xs font-medium">We accept Cash, Zelle, Chime, and Apple Pay on site.</p>
+                                    <p className="text-xs font-bold uppercase tracking-wider mb-1">Payment Options</p>
+                                    <p className="text-xs font-medium">We accept Cash, Zelle, Chime, and Apple Pay.</p>
                                 </div>
                             </div>
                         </div>

@@ -22,11 +22,18 @@ export default function LiveChat() {
     const [input, setInput] = useState('')
     const [hasUnread, setHasUnread] = useState(false)
     const [sessionId, setSessionId] = useState('')
+    const [notification, setNotification] = useState<string | null>(null)
     const { user } = useAuth()
     const endRef = useRef<HTMLDivElement>(null)
 
     useEffect(() => {
         setSessionId(getSessionId())
+    }, [])
+
+    useEffect(() => {
+        const handleOpen = () => setOpen(true)
+        window.addEventListener('custom:open-chat', handleOpen)
+        return () => window.removeEventListener('custom:open-chat', handleOpen)
     }, [])
 
     useEffect(() => {
@@ -55,9 +62,13 @@ export default function LiveChat() {
             .channel('chat_messages_changes')
             .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'chat_messages', filter: `session_id=eq.${sessionId}` }, (payload) => {
                 setMessages(prev => {
-                    // Prevent duplicates (optimistic UI might add first)
                     if (prev.some(m => m.id === payload.new.id)) return prev
-                    if (!open && payload.new.sender === 'agent') setHasUnread(true)
+                    const isFromAgent = payload.new.sender === 'agent'
+                    if (!open && isFromAgent) {
+                        setHasUnread(true)
+                        setNotification(payload.new.message)
+                        setTimeout(() => setNotification(null), 8000)
+                    }
                     return [...prev, payload.new as ChatMessage]
                 })
             })
@@ -100,7 +111,8 @@ export default function LiveChat() {
         await supabase.from('chat_messages').insert([{
             session_id: sessionId,
             sender: 'user',
-            message: `[${senderIdentity}] ${userMsg}`
+            message: `[${senderIdentity}] ${userMsg}`,
+            user_email: user.email
         }])
     }
 
@@ -214,16 +226,35 @@ export default function LiveChat() {
             )}
 
             {/* Toggle button - High Visibility */}
-            <button
-                className="chat-toggle bg-blue-600 hover:bg-blue-700 text-white shadow-xl shadow-blue-600/30 border-2 border-white hover:scale-105 transition-transform duration-300"
-                onClick={() => { setOpen(!open); setHasUnread(false); }}
-                aria-label="Toggle chat"
-            >
-                {open ? <X size={26} /> : <MessageCircle size={26} />}
-                {hasUnread && !open && (
-                    <span className="absolute -top-1.5 -right-1.5 w-5 h-5 bg-red-500 rounded-full text-[10px] text-white flex items-center justify-center font-bold border-2 border-white shadow-md animate-pulse">1</span>
+            <div className="fixed bottom-6 right-6 z-[9999] flex flex-col items-end gap-3">
+                {notification && !open && (
+                    <div
+                        className="bg-white border-2 border-blue-600 rounded-2xl px-4 py-3 shadow-2xl max-w-[240px] animate-fade-left cursor-pointer hover:scale-105 transition-transform"
+                        onClick={() => { setOpen(true); setNotification(null); }}
+                    >
+                        <p className="text-[10px] font-black text-blue-600 uppercase tracking-widest mb-1 flex items-center gap-2">
+                            <span className="w-1.5 h-1.5 bg-blue-600 rounded-full animate-pulse" />
+                            New Message
+                        </p>
+                        <p className="text-sm text-gray-800 line-clamp-2 font-medium leading-tight">
+                            {notification}
+                        </p>
+                    </div>
                 )}
-            </button>
+                <button
+                    className="w-16 h-16 bg-blue-600 hover:bg-blue-700 text-white rounded-full shadow-2xl shadow-blue-600/30 border-2 border-white flex items-center justify-center hover:scale-110 transition-all duration-300 relative group"
+                    onClick={() => { setOpen(!open); setHasUnread(false); setNotification(null); }}
+                    aria-label="Toggle chat"
+                >
+                    {open ? <X size={26} /> : <MessageCircle size={26} />}
+                    {hasUnread && !open && (
+                        <span className="absolute -top-1.5 -right-1.5 w-6 h-6 bg-red-500 rounded-full text-[10px] text-white flex items-center justify-center font-black border-2 border-white shadow-lg animate-bounce">1</span>
+                    )}
+                    <span className="absolute right-full mr-4 px-3 py-1.5 bg-gray-900 text-white text-[10px] font-black uppercase tracking-[0.2em] rounded-lg opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap pointer-events-none shadow-xl border border-white/10">
+                        Chat with us
+                    </span>
+                </button>
+            </div>
         </>
     )
 }
