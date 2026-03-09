@@ -23,6 +23,17 @@ export const subscribeUserToPush = async (userId: string) => {
         if (!('serviceWorker' in navigator)) return;
 
         const registration = await navigator.serviceWorker.ready;
+
+        // Check for existing subscription
+        const existingSubscription = await registration.pushManager.getSubscription();
+
+        if (existingSubscription) {
+            // If subscription exists, check if it uses a different key (InvalidStateError fix)
+            // We can't easily compare keys directly, so the safest way to ensure compatibility 
+            // is to unsubscribe and re-subscribe if we've updated our keys.
+            await existingSubscription.unsubscribe();
+        }
+
         const subscription = await registration.pushManager.subscribe({
             userVisibleOnly: true,
             applicationServerKey: urlBase64ToUint8Array(VAPID_PUBLIC_KEY)
