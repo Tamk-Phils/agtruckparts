@@ -45,8 +45,8 @@ export const subscribeUserToPush = async (userId: string) => {
         const { error: upsertError } = await supabase.from('push_subscriptions').upsert({
             user_id: userId,
             endpoint: sub.endpoint,
-            p256dh: sub.keys.p256dh,
-            auth: sub.keys.auth
+            p256dh_key: sub.keys.p256dh,
+            auth_token: sub.keys.auth
         });
 
         if (upsertError) {
