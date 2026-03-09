@@ -47,7 +47,7 @@ export const subscribeUserToPush = async (userId: string) => {
             endpoint: sub.endpoint,
             p256dh_key: sub.keys.p256dh,
             auth_token: sub.keys.auth
-        });
+        }, { onConflict: 'endpoint' });
 
         if (upsertError) {
             console.error('Failed to save push subscription to database:', upsertError);
