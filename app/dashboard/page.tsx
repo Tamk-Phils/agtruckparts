@@ -32,7 +32,14 @@ export default function UserDashboard() {
                 .eq('customer_email', user.email)
                 .order('created_at', { ascending: false })
 
-            if (orderData) setOrders(orderData)
+            if (orderData) {
+                setOrders(orderData)
+                // Mark orders as read by user
+                const unreadIds = orderData.filter(o => !o.user_read).map(o => o.id)
+                if (unreadIds.length > 0) {
+                    await supabase.from('orders').update({ user_read: true }).in('id', unreadIds)
+                }
+            }
 
             // Fetch Chat Sessions
             const { data: chatData } = await supabase

@@ -54,5 +54,6 @@ export type ChatMessage = {
     session_id: string
     sender: 'user' | 'agent'
     message: string
+    read?: boolean
     created_at: string
 }

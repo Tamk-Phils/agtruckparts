@@ -3,6 +3,7 @@ import { useState, useRef, useEffect } from 'react'
 import { MessageCircle, X, Send, Loader2, Phone, Mail } from 'lucide-react'
 import { supabase, ChatMessage } from '@/lib/supabase'
 import { useAuth } from './AuthProvider'
+import { requestNotificationPermission, sendNativeNotification } from '@/lib/notifications'
 
 const getSessionId = () => {
     if (typeof window === 'undefined') return 'demo-session'
@@ -20,7 +21,7 @@ export default function LiveChat() {
     const [open, setOpen] = useState(false)
     const [messages, setMessages] = useState<ChatMessage[]>([])
     const [input, setInput] = useState('')
-    const [hasUnread, setHasUnread] = useState(false)
+    const [unreadCount, setUnreadCount] = useState(0)
     const [sessionId, setSessionId] = useState('')
     const [notification, setNotification] = useState<string | null>(null)
     const { user } = useAuth()
@@ -31,7 +32,10 @@ export default function LiveChat() {
     }, [])
 
     useEffect(() => {
-        const handleOpen = () => setOpen(true)
+        const handleOpen = () => {
+            setOpen(true);
+            requestNotificationPermission();
+        }
         window.addEventListener('custom:open-chat', handleOpen)
         return () => window.removeEventListener('custom:open-chat', handleOpen)
     }, [])
@@ -44,6 +48,8 @@ export default function LiveChat() {
             const { data } = await supabase.from('chat_messages').select('*').eq('session_id', sessionId).order('created_at', { ascending: true })
             if (data && data.length > 0) {
                 setMessages(data as ChatMessage[])
+                const unread = data.filter(m => m.sender === 'agent' && !m.read).length
+                if (!open) setUnreadCount(unread)
             } else {
                 // Add welcome message if empty
                 setMessages([{
@@ -65,7 +71,8 @@ export default function LiveChat() {
                     if (prev.some(m => m.id === payload.new.id)) return prev
                     const isFromAgent = payload.new.sender === 'agent'
                     if (!open && isFromAgent) {
-                        setHasUnread(true)
+                        setUnreadCount(prev => prev + 1)
+                        sendNativeNotification('New Message from AG Truck Beds', { body: payload.new.message })
                         setNotification(payload.new.message)
                         setTimeout(() => setNotification(null), 8000)
                     }
@@ -84,8 +91,13 @@ export default function LiveChat() {
     }, [messages])
 
     useEffect(() => {
-        if (open) setHasUnread(false)
-    }, [open])
+        if (open) {
+            setUnreadCount(0)
+            if (sessionId) {
+                supabase.from('chat_messages').update({ read: true }).eq('session_id', sessionId).eq('sender', 'agent').eq('read', false).then()
+            }
+        }
+    }, [open, sessionId])
 
 
 
@@ -243,12 +255,12 @@ export default function LiveChat() {
                 )}
                 <button
                     className="w-16 h-16 bg-blue-600 hover:bg-blue-700 text-white rounded-full shadow-2xl shadow-blue-600/30 border-2 border-white flex items-center justify-center hover:scale-110 transition-all duration-300 relative group"
-                    onClick={() => { setOpen(!open); setHasUnread(false); setNotification(null); }}
+                    onClick={() => { setOpen(!open); setUnreadCount(0); setNotification(null); }}
                     aria-label="Toggle chat"
                 >
                     {open ? <X size={26} /> : <MessageCircle size={26} />}
-                    {hasUnread && !open && (
-                        <span className="absolute -top-1.5 -right-1.5 w-6 h-6 bg-red-500 rounded-full text-[10px] text-white flex items-center justify-center font-black border-2 border-white shadow-lg animate-bounce">1</span>
+                    {unreadCount > 0 && !open && (
+                        <span className="absolute -top-1.5 -right-1.5 w-6 h-6 bg-red-500 rounded-full text-[10px] text-white flex items-center justify-center font-black border-2 border-white shadow-lg animate-bounce">{unreadCount > 99 ? '99+' : unreadCount}</span>
                     )}
                     <span className="absolute right-full mr-4 px-3 py-1.5 bg-gray-900 text-white text-[10px] font-black uppercase tracking-[0.2em] rounded-lg opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap pointer-events-none shadow-xl border border-white/10">
                         Chat with us

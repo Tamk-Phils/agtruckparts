@@ -6,6 +6,7 @@ import { Menu, X, Phone, Mail, ChevronDown, ShoppingCart } from 'lucide-react'
 import { useCart } from './CartProvider'
 import { useAuth } from './AuthProvider'
 import CartSlideOut from './CartSlideOut'
+import { supabase } from '@/lib/supabase'
 
 const NAV_LINKS = [
     { label: 'Home', href: '/' },
@@ -28,9 +29,29 @@ export default function Navbar() {
     const [open, setOpen] = useState(false)
     const [shopOpen, setShopOpen] = useState(false)
     const [cartOpen, setCartOpen] = useState(false)
+    const [unreadOrders, setUnreadOrders] = useState(0)
     const pathname = usePathname()
     const { items } = useCart()
     const { user, signOut } = useAuth()
+
+    useEffect(() => {
+        if (!user) {
+            setUnreadOrders(0)
+            return
+        }
+
+        const fetchUnread = async () => {
+            const { count } = await supabase.from('orders').select('*', { count: 'exact', head: true }).eq('customer_email', user.email).eq('user_read', false)
+            setUnreadOrders(count || 0)
+        }
+        fetchUnread()
+
+        const channel = supabase.channel('user_dashboard_alerts')
+            .on('postgres_changes', { event: '*', schema: 'public', table: 'orders', filter: `customer_email=eq.${user.email}` }, fetchUnread)
+            .subscribe()
+
+        return () => { supabase.removeChannel(channel) }
+    }, [user])
 
     const cartCount = items.reduce((sum, item) => sum + item.quantity, 0)
     const isAdmin = pathname.startsWith('/admin')
@@ -116,8 +137,13 @@ export default function Navbar() {
 
                         {user ? (
                             <div className="flex items-center gap-3">
-                                <Link href="/dashboard" className="px-4 py-2 text-[13px] font-black text-blue-600 hover:text-blue-700 bg-blue-50 hover:bg-blue-100 rounded-xl transition-all uppercase tracking-widest border border-blue-100">
+                                <Link href="/dashboard" className="relative px-4 py-2 text-[13px] font-black text-blue-600 hover:text-blue-700 bg-blue-50 hover:bg-blue-100 rounded-xl transition-all uppercase tracking-widest border border-blue-100">
                                     Dashboard
+                                    {unreadOrders > 0 && (
+                                        <span className="absolute -top-1.5 -right-1.5 bg-red-500 text-white text-[10px] font-black w-5 h-5 flex items-center justify-center rounded-full border-2 border-white shadow-sm animate-pulse">
+                                            {unreadOrders > 99 ? '99+' : unreadOrders}
+                                        </span>
+                                    )}
                                 </Link>
                                 <button
                                     onClick={() => signOut()}
@@ -193,8 +219,13 @@ export default function Navbar() {
                     <div className="mt-8 pt-8 border-t-2 border-gray-100 space-y-4">
                         {user ? (
                             <>
-                                <Link href="/dashboard" className="flex items-center justify-center w-full py-4 bg-blue-600 text-white font-black rounded-2xl text-[11px] uppercase tracking-[0.2em] shadow-xl shadow-blue-100" onClick={() => setOpen(false)}>
+                                <Link href="/dashboard" className="relative flex items-center justify-center w-full py-4 bg-blue-600 text-white font-black rounded-2xl text-[11px] uppercase tracking-[0.2em] shadow-xl shadow-blue-100" onClick={() => setOpen(false)}>
                                     Dashboard Access
+                                    {unreadOrders > 0 && (
+                                        <span className="absolute top-2 right-2 bg-red-500 text-white text-[10px] font-black w-5 h-5 flex items-center justify-center rounded-full border-2 border-white shadow-sm">
+                                            {unreadOrders > 99 ? '99+' : unreadOrders}
+                                        </span>
+                                    )}
                                 </Link>
                                 <button onClick={() => { signOut(); setOpen(false); }} className="w-full py-3 px-4 text-gray-400 font-bold hover:text-red-500 text-[10px] uppercase tracking-widest">
                                     Log Out Securely

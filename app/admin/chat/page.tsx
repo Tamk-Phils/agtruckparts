@@ -2,7 +2,7 @@
 import { useState, useEffect, useRef, Suspense } from 'react'
 import { useSearchParams } from 'next/navigation'
 import { MessageCircle, Search, Clock, Check, Send, User, X } from 'lucide-react'
-import { adminSupabase, ChatMessage  } from '@/lib/supabase'
+import { adminSupabase, ChatMessage } from '@/lib/supabase'
 
 type ChatSession = {
     session_id: string
@@ -43,6 +43,11 @@ function ChatContent() {
                             if (match) identity = match[1]
                         }
                         sessionMap.set(msg.session_id, { session_id: msg.session_id, last_message: msg, unread: 0, identity })
+                    }
+
+                    if (msg.sender === 'user' && msg.read === false) {
+                        const session = sessionMap.get(msg.session_id)
+                        if (session) session.unread += 1
                     }
                 })
 
@@ -117,6 +122,14 @@ function ChatContent() {
 
             // Clear unread
             setSessions(prev => prev.map(s => s.session_id === activeSession ? { ...s, unread: 0 } : s))
+
+            // Mark as read in DB
+            await adminSupabase
+                .from('chat_messages')
+                .update({ read: true })
+                .eq('session_id', activeSession)
+                .eq('sender', 'user')
+                .eq('read', false)
         }
         fetchActiveMessages()
     }, [activeSession])

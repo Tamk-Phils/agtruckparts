@@ -2,8 +2,9 @@
 import { useState, useEffect } from 'react'
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
-import { LayoutDashboard, Package, MessageSquare, Star, LogOut, Menu, X, Settings, Bell, Users } from 'lucide-react'
+import { X, Menu, Bell, LayoutDashboard, Package, MessageSquare, Star, Settings, Users, LogOut } from 'lucide-react'
 import { adminSupabase } from '@/lib/supabase'
+import { requestNotificationPermission, sendNativeNotification } from '@/lib/notifications'
 
 const ADMIN_NAV = [
     { label: 'Dashboard', href: '/admin', Icon: LayoutDashboard },
@@ -22,6 +23,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
     const pathname = usePathname()
     const [loading, setLoading] = useState(true)
     const [isAuthorized, setIsAuthorized] = useState(false)
+    const [unreadCounts, setUnreadCounts] = useState({ orders: 0, inquiries: 0, chats: 0 })
 
     useEffect(() => {
         let ordersChannel: any;
@@ -37,10 +39,14 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
             } else {
                 setIsAuthorized(true)
                 setLoading(false)
+                fetchCounts()
+                requestNotificationPermission()
 
                 // Initialize channels only after authorization
                 ordersChannel = adminSupabase.channel('admin_order_alerts')
                     .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'orders' }, (payload) => {
+                        fetchCounts()
+                        sendNativeNotification('New Order Received!', { body: `Order from ${payload.new.customer_name} for $${payload.new.total_amount}` })
                         const id = Date.now()
                         setToast({ message: `New Order Received from ${payload.new.customer_name}!`, href: '/admin/orders', id })
                         setTimeout(() => {
@@ -51,6 +57,8 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
 
                 inquiriesChannel = adminSupabase.channel('admin_inquiry_alerts')
                     .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'inquiries' }, (payload) => {
+                        fetchCounts()
+                        sendNativeNotification('New Inquiry!', { body: `New request from ${payload.new.name}` })
                         const id = Date.now()
                         setToast({ message: `New Request from ${payload.new.name}!`, href: '/admin/inquiries', id })
                         setTimeout(() => {
@@ -62,12 +70,14 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
                 chatChannel = adminSupabase.channel('admin_chat_alerts')
                     .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'chat_messages' }, (payload) => {
                         if (payload.new.sender === 'user') {
+                            fetchCounts()
                             const id = Date.now()
                             const match = payload.new.message.match(/^\[(.*?)\]/)
                             const sender = match ? match[1] : 'A customer'
                             const text = payload.new.message.replace(/^\[.*?\]\s*/, '')
                             const targetEmail = payload.new.user_email
 
+                            sendNativeNotification('New Message Received', { body: text.substring(0, 100) })
                             setToast({
                                 message: `${sender}: ${text.substring(0, 30)}${text.length > 30 ? '...' : ''}`,
                                 href: targetEmail ? `/admin/chat?email=${targetEmail}` : '/admin/chat',
@@ -81,6 +91,19 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
                     .subscribe()
             }
         }
+
+        const fetchCounts = async () => {
+            const { count: ordersCount } = await adminSupabase.from('orders').select('*', { count: 'exact', head: true }).in('status', ['pending', 'pending_payment'])
+            const { count: inquiriesCount } = await adminSupabase.from('inquiries').select('*', { count: 'exact', head: true }).eq('status', 'new')
+            const { count: chatsCount } = await adminSupabase.from('chat_messages').select('*', { count: 'exact', head: true }).eq('sender', 'user').eq('read', false)
+
+            setUnreadCounts({
+                orders: ordersCount || 0,
+                inquiries: inquiriesCount || 0,
+                chats: chatsCount || 0
+            })
+        }
+
         checkAuth()
 
         return () => {
@@ -144,17 +167,32 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
                 <nav className="flex flex-col gap-1 p-3 flex-1">
                     {ADMIN_NAV.map(({ label, href, Icon }) => {
                         const active = pathname === href
+                        let badgeCount = 0;
+                        if (label === 'Orders') badgeCount = unreadCounts.orders;
+                        if (label === 'Inquiries') badgeCount = unreadCounts.inquiries;
+                        if (label === 'Live Chat') badgeCount = unreadCounts.chats;
+
                         return (
                             <Link
                                 key={label}
                                 href={href}
-                                className={`flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-bold transition-all ${active
+                                className={`relative flex items-center justify-between px-3 py-2.5 rounded-xl text-sm font-bold transition-all ${active
                                     ? 'bg-blue-50 text-blue-600 border border-blue-200 shadow-sm'
                                     : 'text-gray-600 hover:bg-gray-100 hover:text-gray-900 border border-transparent'
                                     }`}
                             >
-                                <Icon size={16} className="flex-shrink-0" />
-                                {sideOpen && <span>{label}</span>}
+                                <div className="flex items-center gap-3">
+                                    <Icon size={16} className="flex-shrink-0" />
+                                    {sideOpen && <span>{label}</span>}
+                                </div>
+                                {badgeCount > 0 && sideOpen && (
+                                    <span className={`px-2 py-0.5 rounded-full text-[10px] font-black tracking-widest ${active ? 'bg-blue-200 text-blue-800' : 'bg-red-500 text-white shadow-sm'}`}>
+                                        {badgeCount > 99 ? '99+' : badgeCount}
+                                    </span>
+                                )}
+                                {badgeCount > 0 && !sideOpen && (
+                                    <div className="absolute right-2 top-2 w-2 h-2 rounded-full bg-red-500 shadow-sm animate-pulse"></div>
+                                )}
                             </Link>
                         )
                     })}
