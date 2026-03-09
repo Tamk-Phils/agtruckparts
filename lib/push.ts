@@ -42,14 +42,18 @@ export const subscribeUserToPush = async (userId: string) => {
         const sub = JSON.parse(JSON.stringify(subscription));
 
         // Save to Supabase
-        await supabase.from('push_subscriptions').upsert({
+        const { error: upsertError } = await supabase.from('push_subscriptions').upsert({
             user_id: userId,
             endpoint: sub.endpoint,
             p256dh: sub.keys.p256dh,
             auth: sub.keys.auth
         });
 
-        console.log('Push subscription successful');
+        if (upsertError) {
+            console.error('Failed to save push subscription to database:', upsertError);
+        } else {
+            console.log('Push subscription successful');
+        }
     } catch (error) {
         console.error('Push subscription failed:', error);
     }
