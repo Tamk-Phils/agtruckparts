@@ -4,6 +4,7 @@ import Link from 'next/link'
 import { Phone, MessageCircle, ArrowLeft, Tag, CheckCircle, XCircle, Calendar, Wrench, Car } from 'lucide-react'
 import { supabase } from '@/lib/supabase'
 import AddToCartButton from '@/components/AddToCartButton'
+import ProductImageGallery from '@/components/ProductImageGallery'
 
 export const revalidate = 60
 
@@ -42,30 +43,11 @@ export default async function ProductDetailPage({ params }: { params: Promise<{ 
 
             <div className="grid md:grid-cols-2 gap-10">
                 {/* Images */}
-                <div className="flex flex-col gap-4">
-                    <div className="relative h-80 md:h-[420px] rounded-2xl overflow-hidden border border-gray-200 bg-white shadow-md">
-                        <Image
-                            src={(product.images && product.images[0]) ? product.images[0] : '/images/placeholder.jpg'}
-                            alt={product.name}
-                            fill
-                            className="object-contain"
-                        />
-                        <div className="absolute top-4 left-4 flex flex-col gap-2">
-                            {product.featured && (
-                                <span className="badge bg-gray-900 text-white border-gray-700 shadow-sm">⭐ Featured</span>
-                            )}
-                        </div>
-                    </div>
-                    {product.images && product.images.length > 1 && (
-                        <div className="flex gap-3">
-                            {product.images.map((img: string, i: number) => (
-                                <div key={i} className="relative w-24 h-24 rounded-xl overflow-hidden border border-gray-200 bg-white shadow-sm hover:border-blue-400 cursor-pointer transition-colors">
-                                    <Image src={img} alt={`${product.name} ${i + 1}`} fill className="object-cover" />
-                                </div>
-                            ))}
-                        </div>
-                    )}
-                </div>
+                <ProductImageGallery
+                    images={product.images || []}
+                    name={product.name}
+                    featured={product.featured}
+                />
 
                 {/* Info */}
                 <div>
