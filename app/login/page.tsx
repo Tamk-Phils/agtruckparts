@@ -19,27 +19,28 @@ export default function LoginPage() {
         setError(null)
 
         try {
+            const cleanedEmail = email.trim()
             if (isSignUp) {
                 const { error: signUpError } = await supabase.auth.signUp({
-                    email,
+                    email: cleanedEmail,
                     password,
                 })
                 if (signUpError) throw signUpError
                 alert("Sign up successful! You can now log in.")
                 setIsSignUp(false)
             } else {
-                const adminEmail = process.env.NEXT_PUBLIC_ADMIN_EMAIL
+                const adminEmail = process.env.NEXT_PUBLIC_ADMIN_EMAIL?.trim().toLowerCase()
 
-                if (email === adminEmail) {
+                if (cleanedEmail.toLowerCase() === adminEmail) {
                     const { error: signInError } = await adminSupabase.auth.signInWithPassword({
-                        email,
+                        email: cleanedEmail,
                         password,
                     })
                     if (signInError) throw signInError
                     router.push('/admin')
                 } else {
                     const { error: signInError } = await supabase.auth.signInWithPassword({
-                        email,
+                        email: cleanedEmail,
                         password,
                     })
                     if (signInError) throw signInError

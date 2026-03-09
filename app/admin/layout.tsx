@@ -30,9 +30,9 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
 
         const checkAuth = async () => {
             const { data: { session } } = await adminSupabase.auth.getSession()
-            const adminEmail = process.env.NEXT_PUBLIC_ADMIN_EMAIL
+            const adminEmail = process.env.NEXT_PUBLIC_ADMIN_EMAIL?.trim().toLowerCase()
 
-            if (!session || session.user.email !== adminEmail) {
+            if (!session || session.user.email?.toLowerCase() !== adminEmail) {
                 window.location.href = '/login'
             } else {
                 setIsAuthorized(true)
